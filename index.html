@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Legal Craft AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--bg:#212121;--sb:#171717;--sur:#2f2f2f;--brd:#3f3f3f;--txt:#ececec;--mut:#8e8ea0;--grn:#10a37f;--grn2:#0d8f6f;}
+    html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);}
+    .app{display:flex;height:100vh;}
+    /* SIDEBAR */
+    .sb{width:256px;background:var(--sb);display:flex;flex-direction:column;padding:8px;flex-shrink:0;}
+    .new{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);color:var(--txt);font-size:13px;cursor:pointer;background:none;width:100%;margin-bottom:10px;font-family:'Inter',sans-serif;font-weight:500;transition:background 0.15s;}
+    .new:hover{background:rgba(255,255,255,0.05);}
+    .new svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
+    .lbl{font-size:10px;color:var(--mut);letter-spacing:0.07em;text-transform:uppercase;padding:10px 12px 5px;}
+    .si{padding:7px 12px;border-radius:8px;font-size:12px;color:var(--mut);cursor:pointer;transition:all 0.15s;margin:1px 0;line-height:1.4;}
+    .si:hover{background:rgba(255,255,255,0.05);color:var(--txt);}
+    .sbot{margin-top:auto;border-top:1px solid var(--brd);padding-top:8px;}
+    .lsel{width:100%;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid var(--brd);color:var(--txt);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;outline:none;}
+    .lsel option{background:#171717;}
+    /* MAIN */
+    .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+    .top{display:flex;align-items:center;justify-content:center;padding:13px;border-bottom:1px solid var(--brd);flex-shrink:0;position:relative;}
+    .ttl{font-size:15px;font-weight:600;}
+    .sub{position:absolute;right:16px;font-size:10px;background:rgba(16,163,127,0.12);color:var(--grn);border:1px solid rgba(16,163,127,0.25);padding:3px 10px;border-radius:20px;}
+    /* CHAT */
+    .cs{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+    .cs::-webkit-scrollbar{width:4px;} .cs::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px;}
+    /* WELCOME */
+    .wl{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:18px;padding:30px 20px;text-align:center;}
+    .wico{width:52px;height:52px;background:var(--grn);border-radius:14px;display:flex;align-items:center;justify-content:center;}
+    .wico svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.8;}
+    .wt{font-size:24px;font-weight:600;}
+    .ws{font-size:13px;color:var(--mut);max-width:360px;line-height:1.75;}
+    .wg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:480px;}
+    .wc{background:rgba(255,255,255,0.04);border:1px solid var(--brd);border-radius:10px;padding:13px;cursor:pointer;text-align:left;transition:all 0.2s;font-size:12px;color:var(--mut);line-height:1.5;}
+    .wc:hover{border-color:rgba(16,163,127,0.4);color:var(--txt);background:rgba(16,163,127,0.05);}
+    .wc h4{font-size:13px;font-weight:500;color:var(--txt);margin-bottom:5px;}
+    /* MESSAGES */
+    .mr{padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+    .mr.user{background:rgba(255,255,255,0.02);}
+    .mi{max-width:720px;margin:0 auto;padding:0 20px;display:flex;gap:14px;align-items:flex-start;}
+    .av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;}
+    .av.ai{background:var(--grn);}
+    .av.user{background:#7c3aed;}
+    .mb{flex:1;font-size:14px;line-height:1.8;color:var(--txt);}
+    .mb p{margin:5px 0;} .mb h3{font-size:15px;font-weight:600;margin:14px 0 6px;color:#fff;} .mb h3:first-child{margin-top:0;}
+    .mb ul,.mb ol{padding-left:20px;margin:8px 0;} .mb li{margin:4px 0;color:#d4d4d4;}
+    .mb strong{font-weight:600;color:#fff;} .mb code{background:#1a1a1a;padding:2px 7px;border-radius:4px;font-size:12px;font-family:'Courier New',monospace;color:var(--grn);}
+    /* DRAFT */
+    .dd{background:#111;border:1px solid #333;border-left:4px solid var(--grn);border-radius:0 8px 8px 0;padding:18px 20px;margin:12px 0;font-size:13px;line-height:2;color:#d0d0d0;font-family:'Courier New',monospace;white-space:pre-wrap;word-break:break-word;}
+    .da{display:flex;gap:8px;margin-top:8px;}
+    .db{padding:6px 14px;border-radius:7px;font-size:12px;border:1px solid var(--brd);color:var(--mut);background:none;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s;}
+    .db:hover{background:rgba(255,255,255,0.05);color:var(--txt);}
+    .db.p{background:var(--grn);color:#fff;border-color:var(--grn);}
+    .db.p:hover{background:var(--grn2);}
+    /* SOURCES */
+    .src{margin-top:12px;background:rgba(255,255,255,0.03);border:1px solid var(--brd);border-radius:8px;padding:12px 14px;}
+    .srch{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;}
+    .srcr{display:flex;align-items:flex-start;gap:8px;margin:4px 0;}
+    .srcd{width:5px;height:5px;border-radius:50%;background:var(--grn);flex-shrink:0;margin-top:7px;}
+    .srcl{font-size:12px;color:var(--grn);text-decoration:none;line-height:1.5;}
+    .srcl:hover{text-decoration:underline;}
+    /* LOADING */
+    .dots{display:flex;gap:5px;padding:4px 0;}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--grn);opacity:0.3;animation:pulse 1.3s ease-in-out infinite;}
+    .dot:nth-child(2){animation-delay:0.2s;} .dot:nth-child(3){animation-delay:0.4s;}
+    @keyframes pulse{0%,100%{opacity:0.25;transform:scale(0.8);}50%{opacity:1;transform:scale(1.1);}}
+    /* INPUT */
+    .ia{padding:14px 20px 12px;flex-shrink:0;}
+    .ib{max-width:720px;margin:0 auto;background:var(--sur);border:1px solid var(--brd);border-radius:14px;display:flex;align-items:flex-end;gap:10px;padding:12px 16px;transition:border-color 0.2s;}
+    .ib:focus-within{border-color:rgba(16,163,127,0.4);}
+    .ci{flex:1;background:none;border:none;outline:none;color:var(--txt);font-family:'Inter',sans-serif;font-size:14px;resize:none;min-height:24px;max-height:160px;line-height:1.6;}
+    .ci::placeholder{color:var(--mut);}
+    .snd{width:34px;height:34px;border-radius:8px;background:var(--grn);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}
+    .snd:hover{background:var(--grn2);}
+    .snd:disabled{opacity:0.3;cursor:not-allowed;}
+    .snd svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.2;}
+    .in{max-width:720px;margin:8px auto 0;text-align:center;font-size:11px;color:var(--mut);}
+    @media(max-width:768px){.sb{display:none;}.wg{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="sb">
+    <button class="new" onclick="newChat()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Chat
+    </button>
+    <div class="lbl">Draft Karo</div>
+    <div class="si" onclick="ask('Bail application draft karo Section 483 BNSS — naam: , court: , FIR: , offence: ')">📄 Bail Application (S.483)</div>
+    <div class="si" onclick="ask('Anticipatory bail draft karo Section 482 BNSS — naam: , court: , reason: ')">🔒 Anticipatory Bail (S.482)</div>
+    <div class="si" onclick="ask('FIR complaint draft karo Section 173 BNSS — naam: , date: , place: , kya hua: ')">📋 FIR / Complaint</div>
+    <div class="si" onclick="ask('Legal notice draft karo Section 138 NI Act — cheque no: , amount: Rs., dishonour date: ')">⚖️ Legal Notice S.138</div>
+    <div class="si" onclick="ask('Quashing petition draft karo Section 528 BNSS — FIR no: , PS: , grounds: ')">❌ Quashing (S.528)</div>
+    <div class="si" onclick="ask('Divorce petition draft karo Section 13 HMA — naam: , marriage date: , grounds: cruelty')">💔 Divorce Petition</div>
+    <div class="si" onclick="ask('Consumer complaint draft karo — product: , company: , amount: Rs., defect: ')">🛒 Consumer Complaint</div>
+    <div class="si" onclick="ask('RTI application draft karo — department: , information: , time period: ')">📋 RTI Application</div>
+    <div class="si" onclick="ask('Sale deed draft karo — vendor: , purchaser: , property: , amount: Rs.')">🏠 Sale Deed</div>
+    <div class="si" onclick="ask('Legal notice draft karo — naam: , receiver: , amount: Rs., demand: ')">📩 Legal Notice (General)</div>
+    <div class="si" onclick="ask('Vakalatnama draft karo — client naam: , court: , case number: ')">📝 Vakalatnama</div>
+
+    <div class="lbl">Research Karo</div>
+    <div class="si" onclick="ask('BNS 2023 Section 103 kya hai — murder — leading cases ke saath explain karo')">⚖️ BNS S.103 Murder</div>
+    <div class="si" onclick="ask('BNS Section 85 kya hai — cruelty 498A — explain karo leading cases')">👨‍👩‍👧 BNS S.85 Cruelty</div>
+    <div class="si" onclick="ask('BNSS Section 482 anticipatory bail explain karo — Gurbaksh Singh case')">🔒 BNSS S.482 Ant.Bail</div>
+    <div class="si" onclick="ask('Article 21 Right to Life explain karo — Maneka Gandhi case ke saath')">📚 Article 21</div>
+    <div class="si" onclick="ask('Section 138 NI Act cheque bounce explain karo — leading cases')">💰 S.138 Cheque Bounce</div>
+    <div class="si" onclick="ask('Kesavananda Bharati case explain karo — facts aur judgment simple language mein')">🏛️ Kesavananda Case</div>
+
+    <div class="sbot">
+      <div class="lbl">Language / भाषा</div>
+      <select class="lsel" id="ls" onchange="lang=this.value">
+        <option value="English">English</option>
+        <option value="Hindi">हिंदी</option>
+        <option value="Marathi">मराठी</option>
+        <option value="Bengali">বাংলা</option>
+        <option value="Telugu">తెలుగు</option>
+        <option value="Tamil">தமிழ்</option>
+        <option value="Gujarati">ગુજરાતી</option>
+        <option value="Kannada">ಕನ್ನಡ</option>
+        <option value="Malayalam">മലയാളം</option>
+        <option value="Punjabi">ਪੰਜਾਬੀ</option>
+        <option value="Urdu">اردو</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="top">
+      <span class="ttl">Legal Craft AI</span>
+      <span class="sub">BNS/BNSS/BSA 2023 · Verified · Official Templates</span>
+    </div>
+    <div class="cs" id="cs">
+      <div class="wl" id="wl">
+        <div class="wico"><svg viewBox="0 0 24 24"><path d="M12 3L4 7v10l8 4 8-4V7L12 3z"/><path d="M12 3v18M4 7l8 4 8-4"/></svg></div>
+        <div class="wt">Legal Craft AI</div>
+        <div class="ws">Koi bhi document draft karein, section samjhein, ya case research karein — verified Indian legal sources se.</div>
+        <div class="wg">
+          <div class="wc" onclick="ask('Bail application draft karo Section 483 BNSS — naam: Ram Kumar, court: Sessions Court Varanasi, FIR: 123/2024, offence: dhokha cheating')">
+            <h4>📄 Document Draft</h4>Bail, FIR, Notice, Petition — official format mein
+          </div>
+          <div class="wc" onclick="ask('Kesavananda Bharati v State of Kerala case explain karo simple language mein')">
+            <h4>🏛️ Case Research</h4>SC & HC judgements — facts, ratio, impact
+          </div>
+          <div class="wc" onclick="ask('BNS 2023 Section 103 murder explain karo — leading cases ke saath')">
+            <h4>📚 Section Explain</h4>BNS, BNSS, BSA, Constitution — verified text
+          </div>
+          <div class="wc" onclick="ask('Cheque bounce hua hai — Section 138 NI Act — kya process hai notice se court tak?')">
+            <h4>💬 Legal Query</h4>Koi bhi legal sawaal — step by step jawab
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ia">
+      <div class="ib">
+        <textarea class="ci" id="ci" placeholder="Section poochein, case dhundein, ya document draft karwayein..." rows="1" onkeydown="onK(event)" oninput="rsz(this)"></textarea>
+        <button class="snd" id="sb" onclick="send()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+      </div>
+      <div class="in">Legal Craft AI · BNS/BNSS/BSA 2023 Verified · 15+ Acts · Official Templates · Web Verified</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let msgs=[], lang='English', busy=false;
+
+function ask(q){ const i=document.getElementById('ci'); i.value=q; rsz(i); send(); }
+function newChat(){
+  msgs=[];
+  const c=document.getElementById('cs'); c.innerHTML='';
+  const w=document.createElement('div'); w.className='wl'; w.id='wl';
+  w.innerHTML=`<div class="wico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 3L4 7v10l8 4 8-4V7L12 3z"/><path d="M12 3v18M4 7l8 4 8-4"/></svg></div><div class="wt">Legal Craft AI</div><div class="ws">Naya sawaal poochein.</div>`;
+  c.appendChild(w);
+}
+function onK(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } }
+function rsz(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,160)+'px'; }
+function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function rmW(){ const w=document.getElementById('wl'); if(w) w.remove(); }
+
+function addU(text){
+  rmW();
+  const c=document.getElementById('cs');
+  const r=document.createElement('div'); r.className='mr user';
+  r.innerHTML=`<div class="mi"><div class="av user">U</div><div class="mb"><p>${esc(text).replace(/\n/g,'<br>')}</p></div></div>`;
+  c.appendChild(r); c.scrollTop=c.scrollHeight;
+}
+
+function addA(){
+  const c=document.getElementById('cs');
+  const r=document.createElement('div'); r.className='mr';
+  const i=document.createElement('div'); i.className='mi';
+  const a=document.createElement('div'); a.className='av ai'; a.textContent='LC';
+  const b=document.createElement('div'); b.className='mb';
+  b.innerHTML='<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  i.appendChild(a); i.appendChild(b); r.appendChild(i); c.appendChild(r);
+  c.scrollTop=c.scrollHeight; return b;
+}
+
+function copy(id){ const el=document.getElementById(id); if(el) navigator.clipboard.writeText(el.innerText).then(()=>alert('Draft copied! Paste in Word/Google Docs.')); }
+
+function fmt(text, sources){
+  let dh='', did='d'+Date.now();
+  const m=text.match(/---DRAFT START---([\s\S]*?)---DRAFT END---/);
+  if(m){
+    dh=`<div class="dd" id="${did}">${esc(m[1].trim())}</div><div class="da"><button class="db p" onclick="copy('${did}')">📋 Copy Draft</button><button class="db" onclick="window.print()">🖨️ Print</button></div>`;
+    text=text.replace(/---DRAFT START---[\s\S]*?---DRAFT END---/,'__D__');
+  }
+  let html=text
+    .replace(/===(.+?)===/g,'<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/__D__/,dh)
+    .split('\n\n').map(p=>{
+      if(!p.trim()) return '';
+      if(p.startsWith('<')) return p;
+      if(p.startsWith('- ')||p.startsWith('* ')) return '<ul>'+p.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^[-*]\s*/,'')}</li>`).join('')+'</ul>';
+      if(/^\d+\./.test(p)) return '<ol>'+p.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^\d+\.\s*/,'')}</li>`).join('')+'</ol>';
+      return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+    }).join('');
+  if(sources&&sources.length>0)
+    html+=`<div class="src"><div class="srch">📚 Verified Sources</div>${sources.map(s=>`<div class="srcr"><div class="srcd"></div><a class="srcl" href="${s.url}" target="_blank">${s.title}</a></div>`).join('')}</div>`;
+  return html;
+}
+
+async function send(){
+  if(busy) return;
+  const inp=document.getElementById('ci');
+  const text=inp.value.trim(); if(!text) return;
+  inp.value=''; inp.style.height='auto';
+  addU(text);
+  msgs.push({role:'user',content:(lang!=='English'?`[Respond in ${lang}] `:'')+text});
+  busy=true; document.getElementById('sb').disabled=true;
+  const ab=addA();
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msgs,language:lang})});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d=await r.json();
+    const reply=d.reply||'Response generate nahi ho saka.';
+    ab.innerHTML=fmt(reply,d.sources);
+    msgs.push({role:'assistant',content:reply});
+  }catch(e){
+    ab.innerHTML=`<p style="color:#f87171;">Error: ${e.message}. Please try again.</p>`;
+  }
+  busy=false; document.getElementById('sb').disabled=false;
+  document.getElementById('cs').scrollTop=99999;
+}
+</script>
+</body>
+</html>
