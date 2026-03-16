@@ -1,741 +1,625 @@
-// ================================================================
-// LEGAL CRAFT AI — MAIN BACKEND
-// Loads all data packets — same features as legalcraft-final + more accurate
-// ================================================================
+// LEGAL CRAFT AI — COMPLETE BACKEND V6
+// + Image/PDF Vision + Camera Support
+// + 99% Accurate System Prompts + Auto-Learning
 
-// ── LOAD ALL DATA PACKETS ─────────────────────────────────
-const CONTRACT  = require('./data/contract.js');
-const BNS       = require('./data/bns.js');
-const BNSS      = require('./data/bnss.js');
-const BSA_CONST = require('./data/bsa_const_ni_hma.js');
-const OTHER     = require('./data/other_acts.js');
-const CASES     = require('./data/cases.js');
+const BAIL=require('./data/formats/bail_formats.js');
+const FIR=require('./data/formats/fir_formats.js');
+const PETITIONS=require('./data/formats/petition_formats.js');
+const CIVIL=require('./data/formats/civil_formats.js');
+const FAMILY=require('./data/formats/family_formats.js');
+const CRIMINAL=require('./data/formats/criminal_trial_formats.js');
+const NI_REC=require('./data/formats/ni_act_recovery_formats.js');
+const PROP_CON=require('./data/formats/property_consumer_rti_formats.js');
+const AFFIDAVIT=require('./data/formats/affidavit_general_formats.js');
+const LABOUR=require('./data/formats/labour_formats.js');
+const COMPANY=require('./data/formats/company_formats.js');
+const TAX=require('./data/formats/tax_formats.js');
+const ENV=require('./data/formats/environment_formats.js');
+const BANKING=require('./data/formats/banking_formats.js');
+const CYBER=require('./data/formats/cyber_formats.js');
+const MEDICAL_INS=require('./data/formats/medical_insurance_formats.js');
+const RIGHTS=require('./data/formats/rights_formats.js');
+const WRITS=require('./data/formats/writ_formats.js');
+const MATRIMONIAL=require('./data/formats/matrimonial_formats.js');
+const NOTICE_V2=require('./data/formats/notice_formats_v2.js');
+const CONTRACT=require('./data/contract.js');
+const BNS=require('./data/bns.js');
+const BNSS=require('./data/bnss.js');
+const BSA_CONST=require('./data/bsa_const_ni_hma.js');
+const OTHER=require('./data/other_acts.js');
+const CASES=require('./data/cases.js');
+const LEARNING=require('./data/learning/learning_system.js');
 
-// ── BUILD UNIFIED SECTIONS DATABASE ──────────────────────
-const SECTIONS_DB = [
-  ...CONTRACT.map(x => ({ ...x, act: x.act || "Contract Act 1872" })),
-  ...BNS.map(x      => ({ ...x, act: x.act || "BNS 2023" })),
-  ...BNSS.map(x     => ({ ...x, act: x.act || "BNSS 2023" })),
-  ...BSA_CONST.map(x=> ({ ...x, act: x.act || "BSA 2023" })),
-  ...OTHER.map(x    => ({ ...x, act: x.act || "Other Acts" })),
+const SECTIONS_DB=[
+  ...CONTRACT.map(x=>({...x,act:x.act||"Contract Act 1872"})),
+  ...BNS.map(x=>({...x,act:x.act||"BNS 2023"})),
+  ...BNSS.map(x=>({...x,act:x.act||"BNSS 2023"})),
+  ...BSA_CONST.map(x=>({...x})),
+  ...OTHER.map(x=>({...x})),
 ];
 
-// ── INTENT DETECTION KEYWORDS ────────────────────────────
-const DRAFT_KW = [
-  "draft","drafting","banao","likho","taiyar karo","application chahiye",
-  "petition chahiye","notice chahiye","format chahiye","document chahiye",
-  "bail application","notice bhejna","plaint","vakalatnama","deed chahiye",
-  "complaint likhni","fir likhni","application draft","draft karo","draft karna"
+const FORMAT_MAP=[
+  {keys:["regular bail","483 bnss","bail application","bail chahiye","sessions bail"],packet:"bail",format:"regular_bail"},
+  {keys:["anticipatory bail","482 bnss","pre arrest bail","advance bail","giraftari se pehle bail"],packet:"bail",format:"anticipatory_bail"},
+  {keys:["default bail","statutory bail","479 bnss","half period bail","undertrial bail"],packet:"bail",format:"default_bail"},
+  {keys:["bail cancellation","cancel bail","bail cancel"],packet:"bail",format:"bail_cancellation"},
+  {keys:["bail affidavit","affidavit bail"],packet:"bail",format:"bail_affidavit"},
+  {keys:["surety bond","bail bond","zamaanat"],packet:"bail",format:"surety_bond"},
+  {keys:["personal bond","muchilaaka","pr bond"],packet:"bail",format:"personal_bond"},
+  {keys:["undertaking bail","bail undertaking"],packet:"bail",format:"undertaking"},
+  {keys:["fir","first information report","173 bnss","police complaint","fir draft","fir likhna"],packet:"fir",format:"fir"},
+  {keys:["zero fir","zero fir draft"],packet:"fir",format:"zero_fir"},
+  {keys:["private complaint magistrate","210 bnss","magistrate complaint"],packet:"fir",format:"magistrate_complaint"},
+  {keys:["156 3 crpc","175 3 bnss","direction to register fir","police inaction"],packet:"fir",format:"s175_3_application"},
+  {keys:["complaint affidavit"],packet:"fir",format:"complaint_affidavit"},
+  {keys:["quashing","528 bnss","482 crpc","fir quash","quash fir"],packet:"petitions",format:"quashing"},
+  {keys:["habeas corpus","illegal detention"],packet:"petitions",format:"habeas_corpus"},
+  {keys:["criminal revision","432 bnss","397 crpc","revision petition"],packet:"petitions",format:"criminal_revision"},
+  {keys:["transfer petition","527 bnss","407 crpc","case transfer"],packet:"petitions",format:"transfer_petition"},
+  {keys:["petition affidavit","high court affidavit"],packet:"petitions",format:"petition_affidavit"},
+  {keys:["plaint","civil suit","dawa","civil case file karna"],packet:"civil",format:"plaint"},
+  {keys:["written statement","defence jawab","jawab dawa"],packet:"civil",format:"written_statement"},
+  {keys:["legal notice","demand notice","notice bhejna","notice draft"],packet:"civil",format:"legal_notice"},
+  {keys:["vakalatnama","power of attorney advocate"],packet:"civil",format:"vakalatnama"},
+  {keys:["temporary injunction","order 39","stay order","interim injunction"],packet:"civil",format:"temp_injunction"},
+  {keys:["discharge application","250 bnss","227 crpc","discharge accused"],packet:"criminal",format:"discharge_application"},
+  {keys:["statement 351 bnss","313 crpc statement","accused statement"],packet:"criminal",format:"statement_351"},
+  {keys:["criminal appeal","413 bnss","374 crpc","appeal against conviction"],packet:"criminal",format:"criminal_appeal"},
+  {keys:["appeal against acquittal","418 bnss","state appeal acquittal"],packet:"criminal",format:"state_appeal_acquittal"},
+  {keys:["protest petition","closure report protest","b summary protest"],packet:"criminal",format:"protest_petition"},
+  {keys:["condonation of delay","delay condone","5 limitation act","deri maafi"],packet:"criminal",format:"condonation_delay"},
+  {keys:["cheque bounce notice","138 ni act notice","legal notice 138"],packet:"ni_rec",format:"cheque_bounce_notice"},
+  {keys:["cheque bounce complaint","138 case","cheque complaint"],packet:"ni_rec",format:"cheque_bounce_complaint"},
+  {keys:["reply cheque notice","138 notice reply"],packet:"ni_rec",format:"cheque_bounce_reply"},
+  {keys:["money recovery suit","paisa wapas","summary suit","debt recovery"],packet:"ni_rec",format:"money_recovery_suit"},
+  {keys:["execution petition","decree execution"],packet:"ni_rec",format:"execution_petition"},
+  {keys:["143a ni act","interim compensation cheque"],packet:"ni_rec",format:"interim_compensation_143A"},
+  {keys:["promissory note","pro note","pronote","hundi","loan receipt"],packet:"ni_rec",format:"promissory_note"},
+  {keys:["sale deed","property sale","54 tpa","registry karna","sampatti bikri"],packet:"prop_con",format:"sale_deed"},
+  {keys:["gift deed","sampatti uphar","122 tpa"],packet:"prop_con",format:"gift_deed"},
+  {keys:["rent agreement","lease deed","kiraya agreement"],packet:"prop_con",format:"rent_agreement"},
+  {keys:["consumer complaint","consumer forum","defective product","consumer court"],packet:"prop_con",format:"consumer_complaint"},
+  {keys:["rti application","rti file karna","right to information","suchna ka adhikar"],packet:"prop_con",format:"rti_application"},
+  {keys:["rti first appeal","rti appeal"],packet:"prop_con",format:"rti_first_appeal"},
+  {keys:["rera complaint","rera builder complaint","flat possession delay"],packet:"prop_con",format:"rera_complaint"},
+  {keys:["mutation application","dakhil kharij","namantaran"],packet:"prop_con",format:"mutation_application"},
+  {keys:["general affidavit","affidavit banao","shapath patra","affidavit draft"],packet:"affidavit",format:"general_affidavit"},
+  {keys:["indemnity bond","kshatipurti bond"],packet:"affidavit",format:"indemnity_bond"},
+  {keys:["noc","no objection certificate","noc draft"],packet:"affidavit",format:"noc"},
+  {keys:["power of attorney","special poa","mukhtiarnama"],packet:"affidavit",format:"special_poa"},
+  {keys:["death certificate affidavit","legal heir certificate","varisan"],packet:"affidavit",format:"death_certificate_affidavit"},
+  {keys:["general undertaking","declaration","pratigya patra"],packet:"affidavit",format:"general_undertaking"},
+  {keys:["partnership deed","firm agreement","saajhedari"],packet:"affidavit",format:"partnership_deed"},
+  {keys:["character certificate","experience certificate"],packet:"affidavit",format:"character_certificate"},
+  {keys:["retrenchment notice","25f ida","layoff notice"],packet:"labour",format:"retrenchment_notice"},
+  {keys:["gratuity claim","gratuity application","4 gratuity act"],packet:"labour",format:"gratuity_claim"},
+  {keys:["industrial dispute","labour court claim","unfair dismissal"],packet:"labour",format:"industrial_dispute"},
+  {keys:["appointment letter","offer letter","employment letter"],packet:"labour",format:"appointment_letter"},
+  {keys:["resignation letter","naukri chhodna","istifa patra"],packet:"labour",format:"resignation_letter"},
+  {keys:["termination letter","dismissal letter","terminate employee"],packet:"labour",format:"termination_letter"},
+  {keys:["workmen compensation","industrial accident","kaam par chot"],packet:"labour",format:"workmen_compensation"},
+  {keys:["pf complaint","epfo complaint","pf withdrawal"],packet:"labour",format:"pf_complaint"},
+  {keys:["show cause notice employee","explanation notice scn"],packet:"labour",format:"show_cause_notice"},
+  {keys:["labour court reply","employer written statement"],packet:"labour",format:"labour_written_statement"},
+  {keys:["board resolution","directors resolution","company resolution"],packet:"company",format:"board_resolution"},
+  {keys:["shareholders agreement","sha draft","founder agreement"],packet:"company",format:"shareholders_agreement"},
+  {keys:["agm notice","annual general meeting notice"],packet:"company",format:"agm_notice"},
+  {keys:["mou","memorandum of understanding","samjhauta patra"],packet:"company",format:"mou"},
+  {keys:["nda","non disclosure agreement","confidentiality agreement"],packet:"company",format:"nda"},
+  {keys:["winding up notice","271 companies act","statutory demand company"],packet:"company",format:"company_demand_notice"},
+  {keys:["public notice","newspaper notice"],packet:"company",format:"public_notice"},
+  {keys:["ip infringement notice","copyright infringement","trademark violation"],packet:"company",format:"ip_infringement_notice"},
+  {keys:["franchise agreement","franchise deed"],packet:"company",format:"franchise_agreement"},
+  {keys:["service agreement","consultancy agreement"],packet:"company",format:"service_agreement"},
+  {keys:["income tax notice reply","it notice reply","143 1 notice reply"],packet:"tax",format:"it_notice_reply"},
+  {keys:["gst notice reply","gst notice ka jawab","gst show cause reply"],packet:"tax",format:"gst_notice_reply"},
+  {keys:["income tax appeal","cit a appeal","246a income tax"],packet:"tax",format:"it_appeal_cita"},
+  {keys:["gst refund","gst refund application"],packet:"tax",format:"gst_refund"},
+  {keys:["tds notice reply","tds demand notice"],packet:"tax",format:"tds_reply"},
+  {keys:["penalty notice reply income tax","270a penalty reply"],packet:"tax",format:"penalty_reply"},
+  {keys:["tax settlement","vivad se vishwas"],packet:"tax",format:"tax_settlement"},
+  {keys:["gst cancellation reply","suo motu cancellation reply"],packet:"tax",format:"gst_cancellation_reply"},
+  {keys:["ngt application","national green tribunal","pollution complaint ngt"],packet:"env",format:"ngt_application"},
+  {keys:["pollution complaint","pcb complaint","prdushan shikayat"],packet:"env",format:"pollution_complaint"},
+  {keys:["forest rights claim","van adhikar dava","fra claim"],packet:"env",format:"forest_rights_claim"},
+  {keys:["environmental notice","environment damage notice"],packet:"env",format:"environmental_notice"},
+  {keys:["wildlife complaint","poaching complaint"],packet:"env",format:"wildlife_complaint"},
+  {keys:["tree cutting complaint","ped katna complaint"],packet:"env",format:"tree_cutting_complaint"},
+  {keys:["land acquisition claim","rehabilitation claim","larr act claim"],packet:"env",format:"rehabilitation_claim"},
+  {keys:["loan agreement","karz samjhauta","money lending agreement"],packet:"banking",format:"loan_agreement"},
+  {keys:["bank ombudsman complaint","rbi complaint","bank service complaint"],packet:"banking",format:"bank_ombudsman_complaint"},
+  {keys:["drt application","debt recovery tribunal","17 rdba"],packet:"banking",format:"drt_application"},
+  {keys:["credit card dispute","chargeback","unauthorized transaction credit card"],packet:"banking",format:"credit_card_dispute"},
+  {keys:["investment fraud complaint","chit fund complaint","ponzi scheme"],packet:"banking",format:"investment_complaint"},
+  {keys:["mortgage deed","simple mortgage","58 tpa mortgage deed"],packet:"banking",format:"mortgage_deed"},
+  {keys:["bank guarantee invocation","invoke bank guarantee"],packet:"banking",format:"bank_guarantee_invocation"},
+  {keys:["cyber crime fir","cyber complaint","online fraud fir","cyber cell complaint"],packet:"cyber",format:"cyber_fir"},
+  {keys:["online fraud notice","upi fraud notice","payment fraud notice"],packet:"cyber",format:"online_fraud_notice"},
+  {keys:["hacking complaint","account hack complaint","unauthorized access complaint"],packet:"cyber",format:"hacking_complaint"},
+  {keys:["sextortion complaint","blackmail complaint","online blackmail"],packet:"cyber",format:"sextortion_complaint"},
+  {keys:["deepfake notice","morphed image notice"],packet:"cyber",format:"deepfake_notice"},
+  {keys:["data breach notice","privacy violation notice","personal data breach"],packet:"cyber",format:"data_breach_notice"},
+  {keys:["social media complaint","facebook harassment","instagram complaint"],packet:"cyber",format:"social_media_complaint"},
+  {keys:["medical negligence complaint","doctor negligence consumer","hospital complaint consumer"],packet:"medical",format:"medical_negligence_complaint"},
+  {keys:["mact claim","motor accident claim","166 mva","sadak durghatna claim"],packet:"medical",format:"mact_claim"},
+  {keys:["disability certificate","viklaangta praman patra","rpwd act"],packet:"medical",format:"disability_certificate_application"},
+  {keys:["insurance claim application","bima claim","life insurance claim"],packet:"medical",format:"insurance_claim_application"},
+  {keys:["hospital unlawful detention","hospital not releasing patient"],packet:"medical",format:"hospital_discharge_complaint"},
+  {keys:["rti medical records","hospital rti"],packet:"medical",format:"rti_medical_records"},
+  {keys:["sc st atrocity complaint","atrocity complaint","dalit harassment","poa act"],packet:"rights",format:"sc_st_atrocity_complaint"},
+  {keys:["nhrc complaint","human rights complaint","manavadhikar aayog"],packet:"rights",format:"nhrc_complaint"},
+  {keys:["ncw complaint","mahila aayog complaint"],packet:"rights",format:"ncw_complaint"},
+  {keys:["minority complaint","communal violence complaint"],packet:"rights",format:"minority_complaint"},
+  {keys:["child rights complaint","ncpcr complaint","bal adhikar"],packet:"rights",format:"child_rights_complaint"},
+  {keys:["posh complaint","sexual harassment complaint icc","icc complaint"],packet:"rights",format:"posh_complaint"},
+  {keys:["rte complaint","right to education complaint","25 percent rte"],packet:"rights",format:"right_to_education_complaint"},
+  {keys:["domestic worker complaint","maid complaint","ghar ka kaam complaint"],packet:"rights",format:"domestic_worker_complaint"},
+  {keys:["writ petition","article 226","high court writ petition"],packet:"writs",format:"writ_general"},
+  {keys:["writ mandamus","mandamus petition","direct government action"],packet:"writs",format:"writ_mandamus"},
+  {keys:["pil","public interest litigation","jan hit yachika"],packet:"writs",format:"pil"},
+  {keys:["contempt petition","contempt of court","court order not followed"],packet:"writs",format:"contempt_petition"},
+  {keys:["writ affidavit","high court affidavit writ"],packet:"writs",format:"writ_affidavit"},
+  {keys:["service writ","government employee writ","sarkari naukri writ"],packet:"writs",format:"service_writ"},
+  {keys:["election petition","chunav petition","81 rp act"],packet:"writs",format:"election_petition"},
+  {keys:["review petition","order 47 cpc","punarvichar"],packet:"writs",format:"review_petition"},
+  {keys:["slp","special leave petition","article 136","sc appeal"],packet:"writs",format:"slp"},
+  {keys:["curative petition","after review dismissed sc"],packet:"writs",format:"curative_petition"},
+  {keys:["will draft","last will testament","vasiyat","wasiyat"],packet:"matrimonial",format:"will"},
+  {keys:["adoption deed","adopt child","hama act adoption"],packet:"matrimonial",format:"adoption_deed"},
+  {keys:["guardianship application","guardians wards act","minor guardian"],packet:"matrimonial",format:"guardianship"},
+  {keys:["stridhan recovery","jewellery recovery","wife property recovery"],packet:"matrimonial",format:"stridhan_recovery"},
+  {keys:["succession certificate","372 succession act","varisan praman patra"],packet:"matrimonial",format:"succession_certificate"},
+  {keys:["probate petition","276 succession act","will probate"],packet:"matrimonial",format:"probate_petition"},
+  {keys:["letters of administration","278 succession act"],packet:"matrimonial",format:"letters_administration"},
+  {keys:["marriage registration","vivah panjeeyan","shadi certificate"],packet:"matrimonial",format:"marriage_registration"},
+  {keys:["second motion divorce","13b 2 hma"],packet:"matrimonial",format:"second_motion_divorce"},
+  {keys:["elder abuse complaint","maintenance parents","senior citizen complaint"],packet:"matrimonial",format:"elder_abuse"},
+  {keys:["eviction notice","notice to quit","ghar khaali karo","kiraya notice"],packet:"notice_v2",format:"eviction_notice"},
+  {keys:["defamation notice","manahaani notice"],packet:"notice_v2",format:"defamation_notice"},
+  {keys:["cyber notice","online harassment notice"],packet:"notice_v2",format:"cyber_notice"},
+  {keys:["medical negligence notice","doctor negligence notice"],packet:"notice_v2",format:"medical_negligence_notice"},
+  {keys:["loan demand notice","loan recovery notice","paisa wapas notice"],packet:"notice_v2",format:"loan_demand_notice"},
+  {keys:["sarfaesi notice","13 2 sarfaesi","bank sarfaesi notice"],packet:"notice_v2",format:"sarfaesi_notice"},
+  {keys:["insurance claim rejection notice","bima claim reject notice"],packet:"notice_v2",format:"insurance_notice"},
+  {keys:["workplace harassment notice","posh notice"],packet:"notice_v2",format:"workplace_harassment_notice"},
+  {keys:["property dispute notice","zameen notice","illegal possession notice"],packet:"notice_v2",format:"property_dispute_notice"},
+  {keys:["breach contract notice","contract breach notice"],packet:"notice_v2",format:"breach_contract_notice"},
+  {keys:["divorce petition","talak","13 hma","divorce draft"],packet:"family",format:"divorce_petition"},
+  {keys:["mutual consent divorce","13b hma","aapsi sahmat talak"],packet:"family",format:"mutual_divorce"},
+  {keys:["maintenance application","125 bnss","guzara bhatta","wife maintenance"],packet:"family",format:"maintenance"},
+  {keys:["domestic violence","12 dv act","gharelu hinsa","dv application"],packet:"family",format:"dv_application"},
+  {keys:["child custody","bachche ki custody","26 hma","custody draft"],packet:"family",format:"child_custody"},
 ];
-const SECTION_KW = [
-  "section","dhara","article","bns","bnss","bsa","ipc","crpc","cpc",
-  "kya hai","explain","batao","samjhao","what is","meaning","matlab","define","definition"
-];
-const CASE_KW = [
-  "case","judgment","judgement","verdict","landmark","leading case",
-  "supreme court case","case law","precedent","famous case","kaunsa case","case batao"
-];
 
-// ── SEARCH FUNCTIONS ──────────────────────────────────────
-function findSections(query) {
-  const q = query.toLowerCase();
-  return SECTIONS_DB.filter(s => {
-    const kws = s.kw || [];
-    return kws.some(kw => q.includes(kw)) ||
-      q.includes(`section ${s.s}`) ||
-      q.includes(`sec ${s.s}`) ||
-      q.includes(`s.${s.s}`) ||
-      q.includes(`article ${s.s}`) ||
-      q.includes(`art ${s.s}`) ||
-      q.includes(`art. ${s.s}`);
-  }).slice(0, 5);
+const PKT_MAP={bail:BAIL,fir:FIR,petitions:PETITIONS,civil:CIVIL,family:FAMILY,criminal:CRIMINAL,ni_rec:NI_REC,prop_con:PROP_CON,affidavit:AFFIDAVIT,labour:LABOUR,company:COMPANY,tax:TAX,env:ENV,banking:BANKING,cyber:CYBER,medical:MEDICAL_INS,rights:RIGHTS,writs:WRITS,matrimonial:MATRIMONIAL,notice_v2:NOTICE_V2};
+function getPacket(n){return PKT_MAP[n]||null;}
+
+function findFormat(q){
+  const ql=q.toLowerCase();
+  const scored=FORMAT_MAP.map(f=>({...f,score:f.keys.filter(k=>ql.includes(k)).length})).filter(f=>f.score>0).sort((a,b)=>b.score-a.score);
+  if(!scored.length)return null;
+  const best=scored[0];
+  const pkt=getPacket(best.packet);if(!pkt)return null;
+  const fmt=pkt[best.format];if(!fmt)return null;
+  return{...fmt,packet_name:best.packet,format_key:best.format};
 }
 
-function findCases(query) {
-  const q = query.toLowerCase();
-  return CASES.filter(c => c.kw.some(k => q.includes(k))).slice(0, 3);
+function findAttachments(fmt){
+  if(!fmt?.attach_with)return[];
+  return(fmt.attach_with||[]).map(key=>{
+    for(const pn of Object.keys(PKT_MAP)){const p=getPacket(pn);if(p?.[key])return{name:p[key].name,key};}
+    return null;
+  }).filter(Boolean);
 }
 
-function detectIntent(query) {
-  const q = query.toLowerCase();
-  if (DRAFT_KW.some(kw => q.includes(kw)))   return 'DRAFT';
-  if (SECTION_KW.some(kw => q.includes(kw))) return 'SECTION';
-  if (CASE_KW.some(kw => q.includes(kw)))    return 'CASE';
-  return 'GENERAL';
+function findSections(q){
+  const ql=q.toLowerCase();
+  return SECTIONS_DB.filter(s=>{
+    const kws=s.kw||[];
+    return kws.some(kw=>ql.includes(kw))||ql.includes(`section ${s.s}`)||ql.includes(`sec ${s.s}`)||ql.includes(`s.${s.s}`)||ql.includes(`article ${s.s}`);
+  }).slice(0,6);
 }
 
-// ── TEMPLATES DATABASE ────────────────────────────────────
-const TEMPLATES_DB = {
-  bail: {
-    keywords: ["bail application","regular bail","bail chahiye","483 bnss","439 crpc","bail ke liye"],
-    name: "Bail Application — Section 483 BNSS 2023",
-    generate: (f) => `IN THE COURT OF ${f.court||"[COURT NAME]"}
-${f.district||"[DISTRICT]"}, ${f.state||"[STATE]"}
-
-CRIMINAL MISC. APPLICATION NO. _____ OF ${new Date().getFullYear()}
-
-${f.name||"[ACCUSED NAME]"}, Age: ${f.age||"[AGE]"} yrs, R/o: ${f.address||"[ADDRESS]"}
-                                          ...APPLICANT/ACCUSED
-VERSUS
-STATE OF ${(f.state||"[STATE]").toUpperCase()}
-Through: ${f.ps||"[POLICE STATION]"} Police Station
-                                          ...RESPONDENT
-
-APPLICATION FOR BAIL UNDER SECTION 483 BNSS 2023
-(Formerly Section 439 CrPC 1973)
-
-MOST RESPECTFULLY SHOWETH:
-
-1. That the applicant ${f.name||"[NAME]"} was arrested on ${f.arrest_date||"[DATE OF ARREST]"} in FIR No. ${f.fir||"[FIR NO]"} dated ${f.fir_date||"[FIR DATE]"} at PS ${f.ps||"[PS]"}, District ${f.district||"[DISTRICT]"} for alleged offences under ${f.sections||"[SECTIONS]"}.
-
-2. FACTS OF THE CASE:
-${f.facts||"   [BRIEF FACTS — What happened, nature of allegations]"}
-
-3. GROUNDS FOR BAIL:
-   (a) Applicant is innocent and falsely implicated in this case.
-   (b) There is no direct evidence against the applicant.
-   (c) Applicant is a permanent resident at the above address and is not likely to flee from justice.
-   (d) Applicant shall not tamper with evidence or influence any witness.
-   (e) Applicant has no previous criminal antecedents.
-   (f) Investigation is complete / nearing completion.
-   (g) As held by Hon'ble Supreme Court in Satender Kumar Antil v CBI (2022) 10 SCC 51 — "Bail is rule, jail is exception."
-
-4. Applicant is ready to abide by all conditions imposed by this Hon'ble Court.
-
-5. No previous bail application has been filed / Previous application rejected on [DATE].
-
-PRAYER:
-It is prayed that this Hon'ble Court may be pleased to:
-(a) Release applicant on bail in FIR No. ${f.fir||"[FIR NO]"};
-(b) Pass any other order as deemed fit and proper.
-
-Place: ${f.district||"[PLACE]"}          (${f.advocate||"[ADVOCATE NAME]"})
-Date: ${new Date().toLocaleDateString('en-IN')}   Counsel for Applicant
-                                          Enrol. No.: ${f.enrol||"[ENROLMENT NO]"}
-
-VERIFICATION: I, ${f.name||"[NAME]"}, verify contents are true.
-Verified at ${f.district||"[PLACE]"} on ${new Date().toLocaleDateString('en-IN')}.
-                                          (${f.name||"[NAME]"}) — Applicant`
-  },
-
-  anticipatory_bail: {
-    keywords: ["anticipatory bail","advance bail","pre-arrest bail","482 bnss","438 crpc","giraftari se pehle bail","anticipatory"],
-    name: "Anticipatory Bail — Section 482 BNSS 2023",
-    generate: (f) => `IN THE COURT OF ${f.court||"THE SESSIONS JUDGE / HIGH COURT"}
-${f.district||"[DISTRICT]"}, ${f.state||"[STATE]"}
-
-APPLICATION FOR ANTICIPATORY BAIL UNDER SECTION 482 BNSS 2023
-(Formerly Section 438 CrPC 1973)
-
-${f.name||"[APPLICANT NAME]"}, Age: ${f.age||"[AGE]"} yrs, R/o: ${f.address||"[ADDRESS]"}
-                                          ...APPLICANT
-VERSUS
-STATE OF ${(f.state||"[STATE]").toUpperCase()}
-                                          ...RESPONDENT
-
-MOST RESPECTFULLY SHOWETH:
-
-1. Applicant has reasonable apprehension of being arrested for ${f.complaint||"[COMPLAINT/OFFENCE DETAILS]"} under ${f.sections||"[SECTIONS]"}.
-
-2. BACKGROUND:
-${f.background||"   [WHY ARREST IS APPREHENDED — DETAILS OF DISPUTE/COMPLAINT]"}
-
-3. GROUNDS:
-   (a) Apprehension based on false and malicious complaint.
-   (b) Applicant is innocent and has not committed any offence.
-   (c) Permanent resident — not likely to flee from justice.
-   (d) Will cooperate fully with investigation.
-   (e) Will not tamper with evidence or influence witnesses.
-   (f) As held in Gurbaksh Singh Sibbia v State of Punjab AIR 1980 SC 1632 — cannot be refused merely because offence is serious.
-   (g) As held in Sushila Aggarwal v State (2020) 5 SCC 1 — anticipatory bail need not be time-limited.
-
-4. Applicant undertakes to surrender passport and report to IO as directed.
-
-PRAYER:
-(a) Direct that applicant be released on bail in event of arrest;
-(b) Impose such conditions as deemed fit;
-(c) Any other order as deemed fit.
-
-Place: ${f.district||"[PLACE]"}          (${f.advocate||"[ADVOCATE NAME]"})
-Date: ${new Date().toLocaleDateString('en-IN')}   Counsel for Applicant`
-  },
-
-  fir: {
-    keywords: ["fir","fir likhwana","fir complaint","police complaint","section 173","154 crpc","complaint draft"],
-    name: "FIR / Police Complaint — Section 173 BNSS 2023",
-    generate: (f) => `TO,
-THE OFFICER-IN-CHARGE
-${f.ps||"[POLICE STATION]"} Police Station
-District: ${f.district||"[DISTRICT]"}, ${f.state||"[STATE]"}
-
-SUBJECT: COMPLAINT/FIR UNDER SECTION 173 BNSS 2023
-
-Respected Sir/Madam,
-
-I, ${f.name||"[COMPLAINANT NAME]"}, Age: ${f.age||"[AGE]"} years,
-R/o: ${f.address||"[COMPLETE ADDRESS]"},
-Mobile: ${f.mobile||"[MOBILE NUMBER]"},
-hereby submit this complaint:
-
-ACCUSED DETAILS:
-Name: ${f.accused||"[ACCUSED NAME / UNKNOWN]"}
-Address: ${f.accused_address||"[ADDRESS IF KNOWN]"}
-
-INCIDENT DETAILS:
-Date:  ${f.date||"[DATE OF INCIDENT]"}
-Time:  ${f.time||"[TIME]"}
-Place: ${f.place||"[PLACE OF INCIDENT]"}
-
-FACTS (Chronological Order):
-${f.facts||"[DESCRIBE WHAT HAPPENED STEP BY STEP — DATE, TIME, PLACE, WHO DID WHAT, WITNESSES]"}
-
-WITNESSES (if any):
-${f.witnesses||"1. [NAME AND ADDRESS]\n2. [NAME AND ADDRESS]"}
-
-OFFENCES COMMITTED:
-The above acts are offences under ${f.sections||"[BNS SECTIONS / OTHER ACTS]"}.
-
-PRAYER:
-(a) Register FIR against the accused;
-(b) Arrest and prosecute accused;
-(c) Recover property if stolen/damaged.
-
-I declare contents are true and correct.
-
-Place: ${f.district||"[PLACE]"}
-Date: ${new Date().toLocaleDateString('en-IN')}
-Time: ${new Date().toLocaleTimeString('en-IN')}
-                                          (${f.name||"[NAME]"})
-                                          Complainant — Signature`
-  },
-
-  notice_138: {
-    keywords: ["legal notice 138","cheque bounce notice","section 138 notice","138 ni act notice","cheque dishonour notice"],
-    name: "Legal Notice — Section 138 NI Act (Cheque Bounce)",
-    generate: (f) => `LEGAL NOTICE UNDER SECTION 138 READ WITH SECTION 142
-NEGOTIABLE INSTRUMENTS ACT, 1881
-
-BY SPEED POST / REGISTERED A.D.
-
-Date: ${new Date().toLocaleDateString('en-IN')}
-
-TO,
-${f.accused||"[DRAWER/ACCUSED NAME]"}
-${f.accused_address||"[COMPLETE ADDRESS OF ACCUSED]"}
-
-Under instructions from my client ${f.name||"[CLIENT NAME]"} R/o ${f.address||"[ADDRESS]"}:
-
-1. My client and you had a transaction/agreement whereby you owed Rs. ${f.amount||"[AMOUNT]"}/- to my client on account of ${f.reason||"[REASON FOR DEBT/LIABILITY]"}.
-
-2. In discharge of your liability, you issued the following cheque:
-   Cheque No.:  ${f.cheque_no||"[CHEQUE NUMBER]"}
-   Date:        ${f.cheque_date||"[DATE ON CHEQUE]"}
-   Amount:      Rs. ${f.amount||"[AMOUNT]"}/-
-   Bank:        ${f.bank||"[BANK NAME]"}
-   Branch:      ${f.branch||"[BRANCH]"}
-
-3. The cheque was presented on ${f.present_date||"[DATE OF PRESENTATION]"} and returned dishonoured on ${f.dishonour_date||"[DATE OF DISHONOUR]"} with remark: "${f.reason_return||"Insufficient Funds / Payment Stopped"}".
-
-4. This constitutes an offence under Section 138, Negotiable Instruments Act, 1881.
-
-5. YOU ARE HEREBY CALLED UPON to pay Rs. ${f.amount||"[AMOUNT]"}/- with interest @ 18% per annum within FIFTEEN (15) DAYS of receipt of this notice.
-
-6. Failure to pay will result in criminal complaint under Section 138/142 NI Act at your risk and cost.
-
-${f.advocate||"[ADVOCATE NAME]"}
-Advocate — Enrol. No.: ${f.enrol||"[ENROLMENT NO]"}
-${f.advocate_address||"[ADVOCATE ADDRESS]"}
-Mobile: ${f.advocate_mobile||"[MOBILE]"}`
-  },
-
-  quashing: {
-    keywords: ["quashing","fir quash","section 528","482 crpc","quashing petition","fir cancel karna"],
-    name: "Quashing Petition — Section 528 BNSS 2023",
-    generate: (f) => `IN THE HIGH COURT OF ${(f.state||"[STATE]").toUpperCase()}
-AT ${f.hc||f.district||"[LOCATION]"}
-
-CRIMINAL MISC. PETITION NO. _____ OF ${new Date().getFullYear()}
-
-${f.name||"[PETITIONER NAME]"}, R/o: ${f.address||"[ADDRESS]"}
-                                          ...PETITIONER
-VERSUS
-1. STATE OF ${(f.state||"[STATE]").toUpperCase()}
-2. ${f.complainant||"[COMPLAINANT NAME]"}, R/o: ${f.complainant_address||"[ADDRESS]"}
-                                          ...RESPONDENTS
-
-PETITION UNDER SECTION 528 BNSS 2023
-FOR QUASHING OF FIR NO. ${f.fir||"[FIR NO]"} DATED ${f.fir_date||"[DATE]"}
-PS: ${f.ps||"[POLICE STATION]"}, DIST. ${f.district||"[DISTRICT]"}
-
-MOST RESPECTFULLY SHOWETH:
-
-1. Petitioner files this petition for quashing of FIR No. ${f.fir||"[FIR NO]"} for offences under ${f.sections||"[SECTIONS]"}.
-
-2. FACTS: ${f.facts||"[FACTS CHRONOLOGICALLY — WHY FIR IS ILLEGAL/MALAFIDE]"}
-
-3. GROUNDS FOR QUASHING:
-   (a) FIR does not disclose any cognizable offence against petitioner.
-   (b) Allegations are vague, general and inherently improbable.
-   (c) FIR filed with malafide intention — ${f.grounds||"[SPECIFIC GROUNDS]"}
-   (d) This is essentially a civil dispute dressed in criminal form.
-   (e) As held in State of Haryana v Bhajan Lal 1992 Supp 1 SCC 335 — present FIR falls within quashable categories.
-
-PRAYER:
-(a) Quash FIR No. ${f.fir||"[FIR NO]"} and all proceedings;
-(b) Stay proceedings during pendency;
-(c) Any other order as deemed fit.
-
-Place: ${f.hc||f.district||"[PLACE]"}
-Date: ${new Date().toLocaleDateString('en-IN')}
-                                          (${f.advocate||"[ADVOCATE NAME]"})
-                                          Counsel for Petitioner`
-  },
-
-  divorce: {
-    keywords: ["divorce petition","talak","section 13 hma","divorce karna","vivah viched"],
-    name: "Divorce Petition — Section 13 HMA 1955",
-    generate: (f) => `IN THE FAMILY COURT / COURT OF DISTRICT JUDGE
-${f.district||"[DISTRICT]"}, ${f.state||"[STATE]"}
-
-MATRIMONIAL CASE NO. _____ OF ${new Date().getFullYear()}
-
-${f.name||"[PETITIONER NAME]"}, Age: ${f.age||"[AGE]"} yrs, R/o: ${f.address||"[ADDRESS]"}
-                                          ...PETITIONER
-VERSUS
-${f.respondent||"[RESPONDENT NAME]"}, R/o: ${f.r_address||"[ADDRESS]"}
-                                          ...RESPONDENT
-
-PETITION FOR DIVORCE UNDER SECTION 13
-HINDU MARRIAGE ACT, 1955
-
-MOST RESPECTFULLY SHOWETH:
-
-1. MARRIAGE: The petitioner and respondent were married on ${f.marriage_date||"[DATE]"} at ${f.marriage_place||"[PLACE]"} as per Hindu rites. Children: ${f.children||"Nil"}.
-
-2. FACTS (Chronological):
-${f.facts||"   [DATE] — [FIRST EVENT]\n   [DATE] — [SUBSEQUENT EVENTS]\n   [DATE] — [SPECIFIC ACTS OF CRUELTY]"}
-
-3. GROUNDS: The respondent has treated the petitioner with cruelty under Section 13(1)(ia) HMA 1955:
-${f.grounds||"   [SPECIFIC ACTS OF CRUELTY — PHYSICAL/MENTAL]"}
-
-4. Parties have been living separately since ${f.separation||"[DATE]"}.
-
-PRAYER:
-(a) Decree of divorce dissolving marriage dated ${f.marriage_date||"[DATE]"};
-(b) Permanent alimony/maintenance of Rs. ${f.alimony||"[AMOUNT]"}/- per month;
-(c) Custody of minor child/children;
-(d) Costs of proceedings.
-
-Place: ${f.district||"[PLACE]"}          (${f.advocate||"[ADVOCATE NAME]"})
-Date: ${new Date().toLocaleDateString('en-IN')}   Counsel for Petitioner
-
-VERIFICATION: I, ${f.name||"[NAME]"}, verify contents are true.
-Verified at ${f.district||"[PLACE]"} on ${new Date().toLocaleDateString('en-IN')}.`
-  },
-
-  consumer: {
-    keywords: ["consumer complaint","consumer forum","defective product","deficiency service","consumer court","consumer case"],
-    name: "Consumer Complaint — Consumer Protection Act 2019",
-    generate: (f) => `IN THE DISTRICT CONSUMER DISPUTES REDRESSAL COMMISSION
-${(f.district||"[DISTRICT]").toUpperCase()}, ${f.state||"[STATE]"}
-
-CONSUMER COMPLAINT NO. _____ OF ${new Date().getFullYear()}
-
-${f.name||"[COMPLAINANT NAME]"}, R/o: ${f.address||"[ADDRESS]"}
-                                          ...COMPLAINANT
-VERSUS
-${f.company||"[COMPANY/SELLER NAME]"}, ${f.company_address||"[COMPANY ADDRESS]"}
-                                          ...OPPOSITE PARTY
-
-CONSUMER COMPLAINT UNDER SECTION 35
-CONSUMER PROTECTION ACT, 2019
-
-1. Complainant is a consumer under Section 2(7) Consumer Protection Act 2019.
-
-2. PURCHASE DETAILS:
-   Product/Service: ${f.product||"[PRODUCT/SERVICE]"}
-   Date: ${f.date||"[DATE]"}, Amount: Rs. ${f.amount||"[AMOUNT]"}/-, Bill No.: ${f.bill||"[BILL NO]"}
-
-3. FACTS: ${f.facts||"[WHEN PURCHASED, WHAT DEFECT, WHEN COMPLAINED, OP RESPONSE]"}
-
-4. DEFICIENCY: ${f.deficiency||"[SPECIFIC DEFECT/DEFICIENCY IN SERVICE]"}
-
-PRAYER:
-(a) Direct OP to replace/refund Rs. ${f.refund||"[AMOUNT]"}/-;
-(b) Pay compensation Rs. ${f.compensation||"[AMOUNT]"}/- for mental agony;
-(c) Pay litigation costs Rs. ${f.cost||"[AMOUNT]"}/-;
-(d) Any other order as deemed fit.
-
-Date: ${new Date().toLocaleDateString('en-IN')}
-                                          (${f.name||"[NAME]"})
-                                          Complainant`
-  },
-
-  rti: {
-    keywords: ["rti application","rti file karna","right to information","suchna ka adhikar","rti draft"],
-    name: "RTI Application — Section 6 RTI Act 2005",
-    generate: (f) => `APPLICATION UNDER SECTION 6(1)
-RIGHT TO INFORMATION ACT, 2005
-
-Date: ${new Date().toLocaleDateString('en-IN')}
-
-TO,
-THE PUBLIC INFORMATION OFFICER (CPIO/SPIO)
-${f.department||"[DEPARTMENT/MINISTRY NAME]"}
-${f.dept_address||"[DEPARTMENT ADDRESS]"}
-
-I, ${f.name||"[APPLICANT NAME]"}, R/o ${f.address||"[ADDRESS]"}, Mobile: ${f.mobile||"[MOBILE]"},
-request the following information:
-
-INFORMATION REQUIRED:
-1. ${f.q1||"[FIRST QUERY — Be specific and clear]"}
-2. ${f.q2||"[SECOND QUERY]"}
-3. ${f.q3||"[THIRD QUERY IF ANY]"}
-
-TIME PERIOD REQUIRED: ${f.period||"[e.g., Last 3 years / 2020-2024]"}
-
-I enclose prescribed fee of Rs. 10/- by ${f.payment||"IPO/Cash/Challan"}.
-
-Please provide information within 30 days as per Section 7(1) RTI Act.
-
-                                          (${f.name||"[NAME]"})
-                                          ${f.address||"[ADDRESS]"}
-                                          Mobile: ${f.mobile||"[MOBILE]"}`
-  },
-
-  vakalatnama: {
-    keywords: ["vakalatnama","vakalatnama banao","power of attorney advocate"],
-    name: "Vakalatnama",
-    generate: (f) => `VAKALATNAMA
-
-IN THE COURT OF ${f.court||"[COURT NAME]"}
-CASE: ${f.case||"[CASE TITLE]"} — NO. ${f.case_no||"[CASE NO]"}
-
-I/We ${f.client||"[CLIENT NAME]"}, R/o ${f.address||"[ADDRESS]"}, hereby appoint:
-
-${f.advocate||"[ADVOCATE NAME]"}
-Advocate — Enrolment No.: ${f.enrol||"[ENROLMENT NO]"}
-${f.advocate_address||"[ADVOCATE ADDRESS]"}
-
-to appear and act on my/our behalf with authority to:
-(a) Appear in this case and all connected proceedings
-(b) Sign and file documents, applications and appeals
-(c) Receive notices, summons and orders
-(d) Compromise with consent of client
-(e) Engage other advocates if required
-
-I agree to ratify all acts done by the said Advocate.
-
-Date: ${new Date().toLocaleDateString('en-IN')}
-
-                    (${f.client||"[CLIENT NAME]"})
-                    Signature/Thumb Impression
-
-ACCEPTED:
-                    (${f.advocate||"[ADVOCATE NAME]"})
-                    Advocate — Signature`
-  },
-
-  sale_deed: {
-    keywords: ["sale deed","property sale","registry karna","54 tpa","sampatti bikri","sale deed draft"],
-    name: "Sale Deed — Section 54 TPA 1882",
-    generate: (f) => `SALE DEED
-
-Executed on: ${new Date().toLocaleDateString('en-IN')}
-
-VENDOR (SELLER): ${f.vendor||"[SELLER FULL NAME]"}, Age: ${f.vendor_age||"[AGE]"} yrs
-S/o: ${f.vendor_father||"[FATHER NAME]"}, R/o: ${f.vendor_address||"[ADDRESS]"}
-
-PURCHASER (BUYER): ${f.purchaser||"[BUYER FULL NAME]"}, Age: ${f.purchaser_age||"[AGE]"} yrs
-S/o: ${f.purchaser_father||"[FATHER NAME]"}, R/o: ${f.purchaser_address||"[ADDRESS]"}
-
-SCHEDULE OF PROPERTY:
-${f.property||"Plot/House No.: [NUMBER]\nArea: [SQ.FT/ACRES]\nLocation: [COMPLETE ADDRESS WITH BOUNDARIES]"}
-
-SALE CONSIDERATION: Rs. ${f.amount||"[AMOUNT]"}/- (${f.amount_words||"[AMOUNT IN WORDS]"})
-
-1. PAYMENT: Purchaser has paid Rs. ${f.amount||"[AMOUNT]"}/- in full. Vendor acknowledges receipt.
-2. TRANSFER: Vendor sells, conveys and transfers all rights, title and interest in Schedule Property to Purchaser.
-3. POSSESSION: Vendor has handed over peaceful vacant possession to Purchaser today.
-4. TITLE: Property is free from all encumbrances, mortgages, disputes and litigation.
-5. INDEMNITY: Vendor shall indemnify Purchaser against all third-party claims.
-
-VENDOR: (${f.vendor||"[SELLER]"})          PURCHASER: (${f.purchaser||"[BUYER]"})
-
-WITNESSES:
-1. _________________ Signature: _________________
-2. _________________ Signature: _________________`
-  },
-
-  legal_notice: {
-    keywords: ["legal notice","demand notice","general notice","notice bhejna","notice draft"],
-    name: "General Legal Notice",
-    generate: (f) => `LEGAL NOTICE
-BY SPEED POST / REGISTERED A.D.
-Date: ${new Date().toLocaleDateString('en-IN')}
-
-TO,
-${f.accused||"[RECEIVER NAME]"}
-${f.accused_address||"[RECEIVER ADDRESS]"}
-
-Under instructions from my client ${f.name||"[CLIENT NAME]"} R/o ${f.address||"[ADDRESS]"}:
-
-1. ${f.facts||"[FACTS OF THE MATTER — WHAT HAPPENED, WHAT IS OWED]"}
-
-2. Due to your ${f.default||"act/omission/breach"}, my client has suffered losses of Rs. ${f.amount||"[AMOUNT]"}/-
-
-3. You are called upon to ${f.demand||"[SPECIFIC DEMAND — PAY/STOP/DO]"} within ${f.days||"15 (Fifteen)"} days of receipt of this notice.
-
-4. Failing which legal proceedings — civil and/or criminal — shall be initiated at your risk and cost.
-
-${f.advocate||"[ADVOCATE NAME]"}
-Advocate — Enrol. No.: ${f.enrol||"[ENROLMENT NO]"}
-${f.advocate_address||"[ADDRESS]"}
-Mobile: ${f.advocate_mobile||"[MOBILE]"}`
-  },
-};
-
-// ── HELPER FUNCTIONS ──────────────────────────────────────
-function findTemplate(query) {
-  const q = query.toLowerCase();
-  for (const [key, tmpl] of Object.entries(TEMPLATES_DB)) {
-    if (tmpl.keywords.some(kw => q.includes(kw))) return tmpl;
-  }
-  return null;
+function findCases(q){
+  const ql=q.toLowerCase();
+  return CASES.filter(c=>c.kw.some(k=>ql.includes(k))).slice(0,4);
 }
 
-function extractFields(query) {
-  const f = {};
-  const patterns = [
-    [/(?:naam|name|accused|petitioner|applicant|complainant)[:\s]+([A-Za-z\s]{3,30})(?:,|\.|\n|ke liye|ki umar)/i, ['name','accused','client','vendor','purchaser']],
-    [/(?:fir|fir no|fir number)[:\s#.]*([0-9\/]+)/i, ['fir']],
-    [/(?:court|adalat)[:\s]+([A-Za-z\s]{3,40})(?:,|\.|\n)/i, ['court']],
-    [/(?:district|jila|city)[:\s]+([A-Za-z\s]{3,30})(?:,|\.|\n)/i, ['district']],
-    [/(?:state|rajya)[:\s]+([A-Za-z\s]{3,20})(?:,|\.|\n)/i, ['state']],
-    [/(?:police station|ps|thana)[:\s]+([A-Za-z\s]{3,30})(?:,|\.|\n)/i, ['ps']],
-    [/(?:amount|rs\.?|rupees)[:\s]+([\d,]+)/i, ['amount']],
-    [/(?:cheque|cheque no)[:\s#.]*([0-9]+)/i, ['cheque_no']],
-    [/(?:bank)[:\s]+([A-Za-z\s]{3,30})(?:,|\.|\n)/i, ['bank']],
-    [/(?:sections?|under)[:\s]+([0-9A-Za-z,\s/]+?)(?:,|\.|\n|of)/i, ['sections']],
-    [/(?:arrest date|arrested on)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i, ['arrest_date']],
-    [/(?:date|tarikh)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i, ['date','fir_date','cheque_date']],
+function detectIntent(q,hasImg){
+  const ql=q.toLowerCase();
+  if(hasImg)return'IMAGE';
+  const imgKw=["photo mein","image mein","document mein","pdf mein","in this","isme","is document","yeh document","yeh photo","scan kiya","uploaded","attached","see this","dekho yeh","read karo"];
+  if(imgKw.some(k=>ql.includes(k)))return'IMAGE';
+  const draftKw=["draft","drafting","banao","likho","taiyar karo","application chahiye","petition chahiye","notice chahiye","format chahiye","document chahiye","bail application","notice bhejna","plaint","vakalatnama","deed chahiye","fir likhni","draft karo","likhna hai","banana hai","format do","document do"];
+  if(draftKw.some(k=>ql.includes(k)))return'DRAFT';
+  const secKw=["section","dhara","article","bns","bnss","bsa","ipc","crpc","kya hai","explain","batao","samjhao","what is","meaning","define","provision","law kya"];
+  if(secKw.some(k=>ql.includes(k)))return'SECTION';
+  const caseKw=["case","judgment","judgement","verdict","landmark","leading case","supreme court case","case law","precedent"];
+  if(caseKw.some(k=>ql.includes(k)))return'CASE';
+  return'GENERAL';
+}
+
+function extractFields(q){
+  const f={};
+  const p=[
+    [/(?:naam|name|accused|petitioner|applicant|complainant|client)[:\s]+([A-Za-z\s\.]{3,40})(?:,|\.|\n)/i,['name','accused','petitioner','applicant','client','plaintiff','aggrieved']],
+    [/(?:s\/o|son of|father)[:\s]+([A-Za-z\s\.]{3,30})(?:,|\.|\n)/i,['father']],
+    [/(?:fir|fir no)[:\s#.]*([0-9\/]+)/i,['fir']],
+    [/(?:court|adalat)[:\s]+([A-Za-z\s]{3,50})(?:,|\.|\n)/i,['court']],
+    [/(?:district|jila|city|zila)[:\s]+([A-Za-z\s]{3,30})(?:,|\.|\n)/i,['district']],
+    [/(?:state|rajya)[:\s]+([A-Za-z\s]{3,25})(?:,|\.|\n)/i,['state']],
+    [/(?:police station|ps|thana)[:\s]+([A-Za-z\s]{3,40})(?:,|\.|\n)/i,['ps']],
+    [/(?:amount|rs\.?|rupees)[:\s]+([\d,]+)/i,['amount']],
+    [/(?:cheque|cheque no)[:\s#.]*([0-9]+)/i,['cheque_no']],
+    [/(?:bank)[:\s]+([A-Za-z\s]{3,40})(?:,|\.|\n)/i,['bank']],
+    [/(?:sections?|under|u\/s|dhara)[:\s]+([0-9A-Za-z,\s/]+?)(?:,|\.|\n|of |bns|bnss)/i,['sections']],
+    [/(?:arrest date|arrested on)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i,['arrest_date']],
+    [/(?:marriage date|shadi|vivah)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i,['marriage_date']],
+    [/(?:date|tarikh)[:\s]+(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i,['date','fir_date']],
+    [/(?:age|umar)[:\s]+(\d{1,3})/i,['age']],
+    [/(?:mobile|phone|contact)[:\s]+(\d{10})/i,['mobile']],
+    [/(?:advocate|vakil)[:\s]+([A-Za-z\s\.]{3,40})(?:,|\.|\n)/i,['advocate']],
+    [/(?:respondent|opposite party)[:\s]+([A-Za-z\s\.]{3,40})(?:,|\.|\n)/i,['respondent']],
+    [/(?:high court|hc)[:\s]+([A-Za-z\s]{3,30})(?:,|\.|\n)/i,['hc']],
+    [/(?:jail|prison)[:\s]+([A-Za-z\s]{3,50})(?:,|\.|\n)/i,['jail']],
   ];
-  for (const [regex, keys] of patterns) {
-    const m = query.match(regex);
-    if (m) keys.forEach(k => { f[k] = m[1].trim(); });
-  }
-  if (f.name) { f.accused = f.accused || f.name; f.client = f.client || f.name; }
+  for(const[regex,keys]of p){const m=q.match(regex);if(m)keys.forEach(k=>{if(!f[k])f[k]=m[1].trim();});}
+  if(f.name)['accused','petitioner','applicant','client','plaintiff','aggrieved','husband','wife','deponent','complainant'].forEach(k=>{if(!f[k])f[k]=f.name;});
   return f;
 }
 
 // ── MAIN HANDLER ──────────────────────────────────────────
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+module.exports=async function handler(req,res){
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods','POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers','Content-Type');
+  if(req.method==='OPTIONS')return res.status(200).end();
+  if(req.method!=='POST')return res.status(405).json({error:'Method not allowed'});
 
-  try {
-    const { messages, language } = req.body;
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'Invalid request' });
-    }
+  try{
+    const{messages,language,imageData,imageType}=req.body;
+    if(!messages||!Array.isArray(messages))return res.status(400).json({error:'Invalid request'});
 
-    const GROQ_API_KEY   = process.env.GROQ_API_KEY;
-    const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
-    const COHERE_API_KEY = process.env.COHERE_API_KEY;
+    const GROQ=process.env.GROQ_API_KEY;
+    const TAVILY=process.env.TAVILY_API_KEY;
+    const COHERE=process.env.COHERE_API_KEY;
+    if(!GROQ)return res.status(500).json({error:'GROQ_API_KEY not configured.'});
 
-    if (!GROQ_API_KEY) return res.status(500).json({ error: 'GROQ API key not configured.' });
+    const lastMsg=messages[messages.length-1];
+    const userQuery=lastMsg?.content||'';
+    const hasImage=!!(imageData&&imageType);
+    const langNote=language&&language!=='English'?`CRITICAL: Respond ENTIRELY in ${language}. All legal terms in ${language} wherever possible.`:'';
+    const intent=detectIntent(userQuery,hasImage);
 
-    const userQuery = messages[messages.length - 1]?.content || '';
-    const langNote  = language && language !== 'English' ? `IMPORTANT: Respond entirely in ${language}. Keep legal terms accurate.` : '';
+    // ── IMAGE / PDF / CAMERA MODE ─────────────────────────
+    if(hasImage){
+      const visionPrompt=`You are Legal Craft AI — India's most accurate legal assistant.
 
-    const intent   = detectIntent(userQuery);
-    const sections = findSections(userQuery);
-    const cases    = findCases(userQuery);
-    const template = intent === 'DRAFT' ? findTemplate(userQuery) : null;
-    const fields   = template ? extractFields(userQuery) : {};
+TASK: Analyze this uploaded ${imageType.includes('pdf')?'PDF document':'image/photo'} carefully.
 
-    let templateText = '';
-    if (template) {
-      try { templateText = template.generate(fields); } catch(e) { templateText = ''; }
-    }
+USER QUERY: "${userQuery}"
 
-    // ── WEB SEARCH ────────────────────────────────────────
-    let webData = '', sources = [];
-    if (TAVILY_API_KEY) {
-      try {
-        const q = intent === 'DRAFT'
-          ? `${template?.name || userQuery} Indian court official format BNS BNSS 2023`
-          : intent === 'SECTION'
-          ? `${userQuery} Indian law section explanation leading cases indiankanoon`
-          : `${userQuery} India Supreme Court judgment`;
+STEP 1 — READ DOCUMENT:
+Carefully read and extract ALL text visible in the image/document.
+Extract: all section numbers, dates, names, case numbers, amounts, legal provisions.
 
-        const tr = await fetch('https://api.tavily.com/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            api_key: TAVILY_API_KEY, query: q,
-            search_depth: 'advanced', max_results: 5, include_answer: true,
-            include_domains: ['indiankanoon.org','sci.gov.in','ecourts.gov.in','livelaw.in','barandbench.com','indiacode.nic.in','judgments.ecourts.gov.in','freelaw.in'],
+STEP 2 — IDENTIFY DOCUMENT TYPE:
+Is it a: FIR / Court Order / Legal Notice / Judgment / Contract / Property Document / 
+         Cheque / Bank Statement / Identity Document / Other legal document?
+
+STEP 3 — ANSWER USER QUERY:
+Based on extracted text and user query:
+
+If user wants EXPLANATION:
+===DOCUMENT IDENTIFIED===
+[Type, parties, date, issuing authority]
+
+===EXTRACTED TEXT/DETAILS===
+[All important text extracted from image]
+
+===WHAT THIS MEANS LEGALLY===
+[Plain language explanation]
+
+===IMPORTANT SECTIONS/PROVISIONS===
+[List sections mentioned, their meaning in BNS/BNSS 2023 if old IPC/CrPC]
+
+===WHAT SHOULD YOU DO===
+[Practical advice — next steps, deadlines, who to contact]
+
+If user wants DRAFT (based on image):
+Extract all details from image and create the requested document.
+Wrap draft in ---DRAFT START--- and ---DRAFT END---
+
+IMPORTANT:
+- Be 99% accurate — use exact text from image
+- If old IPC/CrPC sections appear → mention equivalent BNS/BNSS 2023 section
+- Mention any DEADLINES visible in document
+- Warn about any URGENT action required
+- Suggest free resources: indiankanoon.org, ecourts.gov.in, sci.gov.in
+
+${langNote}`;
+
+      // Use Groq vision model
+      const visionMessages=[{
+        role:"user",
+        content:[
+          {type:"image_url",image_url:{url:`data:${imageType};base64,${imageData}`}},
+          {type:"text",text:visionPrompt}
+        ]
+      }];
+
+      let visionReply='';
+      let sources=[];
+
+      try{
+        const vr=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ}`},
+          body:JSON.stringify({
+            model:'meta-llama/llama-4-scout-17b-16e-instruct',
+            messages:visionMessages,
+            temperature:0.05,
+            max_tokens:4000,
           }),
         });
-        if (tr.ok) {
-          const td = await tr.json();
-          sources = (td.results||[]).slice(0,4).map(r => ({ title:r.title, url:r.url, snippet:r.content?.slice(0,350) }));
-          webData = sources.map(s => `SOURCE: ${s.title}\nURL: ${s.url}\nCONTENT: ${s.snippet}`).join('\n\n');
-          if (td.answer) webData = `WEB SUMMARY: ${td.answer}\n\n` + webData;
+        if(vr.ok){
+          const vd=await vr.json();
+          visionReply=vd.choices?.[0]?.message?.content||'';
         }
-      } catch(e) { console.error('Tavily:', e.message); }
+      }catch(vErr){
+        console.error('Groq vision error:',vErr.message);
+      }
+
+      // Fallback: if vision fails, use text description
+      if(!visionReply){
+        visionReply=`I received your image but could not process it with vision. Please describe what's in the image as text and I'll help you.`;
+      }
+
+      // Web search for sections found in image
+      if(TAVILY&&visionReply){
+        try{
+          const secMatch=visionReply.match(/Section\s+\d+[A-Za-z]*/gi);
+          if(secMatch&&secMatch.length>0){
+            const sq=`${secMatch.slice(0,2).join(' ')} Indian law BNS BNSS 2023 explanation indiankanoon`;
+            const tr=await fetch('https://api.tavily.com/search',{
+              method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({api_key:TAVILY,query:sq,search_depth:'basic',max_results:3,include_domains:['indiankanoon.org','sci.gov.in','indiacode.nic.in','livelaw.in']}),
+            });
+            if(tr.ok){const td=await tr.json();sources=(td.results||[]).slice(0,3).map(r=>({title:r.title,url:r.url,snippet:r.content?.slice(0,200)}));}
+          }
+        }catch(e){}
+      }
+
+      return res.status(200).json({reply:visionReply,intent:'IMAGE',sources,format_used:'Image/Document Analysis',learned_applied:null});
     }
 
-    // ── COHERE RERANK ────────────────────────────────────
-    if (COHERE_API_KEY && sources.length > 2) {
-      try {
-        const cr = await fetch('https://api.cohere.com/v1/rerank', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${COHERE_API_KEY}` },
-          body: JSON.stringify({ model:'rerank-english-v3.0', query:userQuery, documents:sources.map(s=>`${s.title}: ${s.snippet}`), top_n:3 }),
+    // ── TEXT MODE ─────────────────────────────────────────
+    const sections=findSections(userQuery);
+    const cases=findCases(userQuery);
+    const matchedFmt=intent==='DRAFT'?findFormat(userQuery):null;
+    const fields=matchedFmt?extractFields(userQuery):{};
+    const attachments=matchedFmt?findAttachments(matchedFmt):[];
+
+    let templateText='';
+    if(matchedFmt?.generate){try{templateText=matchedFmt.generate(fields);}catch(e){}}
+
+    let learnedContext='',learnedCount=0;
+    if(matchedFmt){
+      try{
+        const corrections=await LEARNING.get(matchedFmt.format_key,10);
+        learnedContext=LEARNING.toContext(corrections,matchedFmt.format_key);
+        learnedCount=corrections.length;
+      }catch(e){}
+    }
+
+    // Multi-source web search
+    let webData='',sources=[];
+    if(TAVILY){
+      try{
+        const queries=intent==='DRAFT'
+          ?[`${matchedFmt?.name||userQuery} Indian court format BNS BNSS 2023 official`,`${userQuery} legal document India format`]
+          :intent==='SECTION'
+          ?[`${userQuery} Indian law section explanation indiankanoon leading cases`,`${userQuery} supreme court high court judgment India`]
+          :intent==='CASE'
+          ?[`${userQuery} Supreme Court India judgment ratio decidendi`,`${userQuery} case law India full judgment`]
+          :[`${userQuery} Indian law BNS BNSS 2023`,`${userQuery} India legal advice`];
+
+        const allRes=[];
+        for(const q of queries.slice(0,2)){
+          const tr=await fetch('https://api.tavily.com/search',{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+              api_key:TAVILY,query:q,search_depth:'advanced',max_results:5,include_answer:true,
+              include_domains:['indiankanoon.org','sci.gov.in','ecourts.gov.in','livelaw.in','barandbench.com','indiacode.nic.in','judgments.ecourts.gov.in','advocatekhoj.com','latestlaws.com','casemine.com','manupatra.com'],
+            }),
+          });
+          if(tr.ok){
+            const td=await tr.json();
+            if(td.answer)webData+=`WEB ANSWER: ${td.answer}\n\n`;
+            allRes.push(...(td.results||[]).map(r=>({title:r.title,url:r.url,snippet:r.content?.slice(0,400)})));
+          }
+        }
+        const seen=new Set();
+        sources=allRes.filter(r=>{if(seen.has(r.url))return false;seen.add(r.url);return true;}).slice(0,6);
+        webData+=sources.map(s=>`SOURCE: ${s.title}\nURL: ${s.url}\n${s.snippet||''}`).join('\n\n');
+      }catch(e){console.error('Tavily:',e.message);}
+    }
+
+    if(COHERE&&sources.length>3){
+      try{
+        const cr=await fetch('https://api.cohere.com/v1/rerank',{
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${COHERE}`},
+          body:JSON.stringify({model:'rerank-english-v3.0',query:userQuery,documents:sources.map(s=>`${s.title}: ${s.snippet||''}`),top_n:4}),
         });
-        if (cr.ok) {
-          const cd = await cr.json();
-          const rr = (cd.results||[]).sort((a,b)=>b.relevance_score-a.relevance_score).map(r=>sources[r.index]).filter(Boolean);
-          if (rr.length > 0) { sources = rr; webData = rr.map(s=>`SOURCE: ${s.title}\nURL: ${s.url}\nCONTENT: ${s.snippet}`).join('\n\n'); }
-        }
-      } catch(e) { console.error('Cohere:', e.message); }
+        if(cr.ok){const cd=await cr.json();const rr=(cd.results||[]).sort((a,b)=>b.relevance_score-a.relevance_score).map(r=>sources[r.index]).filter(Boolean);if(rr.length)sources=rr;}
+      }catch(e){}
     }
 
-    // ── BUILD SYSTEM PROMPT ───────────────────────────────
-    const secText  = sections.map(s=>`${s.act} Section/Article ${s.s} — ${s.t}:\n${s.d}\nLeading Cases: ${s.cl||'See web data'}`).join('\n\n---\n\n');
-    const caseText = cases.map(c=>`${c.n} [${c.c}]\nFacts: ${c.f}\nHeld: ${c.h}\nImportance: ${c.i}`).join('\n\n---\n\n');
+    const secText=sections.map(s=>`**${s.act} — S.${s.s}: ${s.t}**\n${s.d}\nCases: ${s.cl||'—'}`).join('\n\n---\n\n');
+    const caseText=cases.map(c=>`**${c.n}** [${c.c}]\nFacts: ${c.f}\nHeld: ${c.h}\nImportance: ${c.i}`).join('\n\n---\n\n');
+    const attachNote=attachments.length>0?`\nREQUIRED ATTACHMENTS:\n${attachments.map((a,i)=>`${i+1}. ${a.name}`).join('\n')}`:'';
 
-    let system = '';
+    let system='';
 
-    if (intent === 'DRAFT') {
-      system = `You are Legal Craft AI — India's expert legal drafting system.
+    if(intent==='DRAFT'){
+      system=`You are Legal Craft AI — India's most accurate legal drafting system.
+Every draft you produce will be used in REAL Indian courts. 99% accuracy is mandatory.
 
-${template ? `DOCUMENT: ${template.name}` : 'TASK: Draft the requested legal document.'}
+DOCUMENT: ${matchedFmt?.name||'Legal Document'}
+SECTION: ${matchedFmt?.section||''}
+COURT: ${matchedFmt?.court||''}
 
-${templateText ? `OFFICIAL TEMPLATE (Use as base — fill blanks with user details):\n---DRAFT START---\n${templateText}\n---DRAFT END---` : 'No template found — draft in correct Indian court format.'}
+VERIFIED TEMPLATE (USE EXACT STRUCTURE):
+${templateText?`---\n${templateText}\n---`:'No template — use proper Indian court format per jurisdiction'}
 
-RULES:
-1. Use official Indian court format exactly
-2. Use BNS 2023/BNSS 2023/BSA 2023 sections (NOT old IPC/CrPC)
-3. Fill all details user provided
-4. Use [PLACEHOLDER] for missing info
-5. Formal legal language throughout
-6. Wrap complete document in ---DRAFT START--- and ---DRAFT END---
-7. After draft — list what [PLACEHOLDERS] user needs to fill
+${learnedContext}
 
-WEB DATA: ${webData||'Use template as primary source'}
+DATABASE SECTIONS:
+${secText||'Use web data'}
+
+CASE LAWS:
+${caseText||'Use web data'}
+
+WEB RESEARCH:
+${webData||'Use template and database'}
+
+MANDATORY DRAFTING RULES:
+1. Follow template EXACTLY — every heading, every paragraph structure
+2. ALWAYS use BNS 2023 / BNSS 2023 / BSA 2023 — NEVER old IPC/CrPC numbers alone
+3. Fill user details accurately — [FILL: description] for missing info
+4. Formal legal language — no casual language
+5. Correct section numbers from database always
+6. Add 2-3 relevant case citations minimum
+7. VERIFICATION paragraph always at end
+8. Wrap complete draft: ---DRAFT START--- and ---DRAFT END---
+9. After draft:
+   MISSING INFO: list all [FILL:] blanks
+   DOCUMENTS TO ATTACH: ${attachments.map(a=>a.name).join(', ')||'As applicable'}
+   FILING FEE: mention applicable fee
+   IMPORTANT DATES: any deadlines
+${attachNote}
 ${langNote}`;
 
-    } else if (intent === 'SECTION') {
-      system = `You are Legal Craft AI — India's legal section explanation system.
+    }else if(intent==='SECTION'){
+      system=`You are Legal Craft AI — India's most accurate legal research system.
+Give exhaustive, 99% accurate information about Indian laws.
 
-VERIFIED SECTIONS FROM COMPLETE DATABASE:
-${secText||'Not found in database'}
+DATABASE SECTIONS:
+${secText||'Not found — use web data'}
 
-LEADING CASES FROM DATABASE:
-${caseText||'Not found'}
+CASE LAWS DATABASE:
+${caseText||'Not found — use web data'}
 
-WEB DATA:
-${webData||'Use database as primary source'}
+WEB RESEARCH DATA:
+${webData||'Use knowledge base'}
 
-RESPONSE FORMAT (Always follow this):
+MANDATORY FORMAT:
 ===SECTION DETAILS===
-Act name, section number, old equivalent (IPC/CrPC)
+Act name | Section number | Old equivalent | Bailable/Non-bailable | Cognizable/Non-cognizable
 
-===EXACT TEXT===
-Complete text of section
+===EXACT STATUTORY TEXT===
+Complete verbatim text
 
-===SIMPLE EXPLANATION===
-What it means in plain language; Who it applies to; Consequences/punishment
+===PLAIN LANGUAGE EXPLANATION===
+What it means | Who it applies to | Punishment | Exceptions | Defences available
 
-===LEADING CASES===
-For each case: Name + citation; Facts (3-4 sentences); What court decided; Why important
+===LEADING CASES (3-5 cases)===
+For each: Full name + Citation | Facts (3 lines) | Held | Why important | Still good law?
 
-===KEY POINTS===
-Important things to remember
+===BNS/BNSS/BSA 2023 UPDATE===
+Old IPC/CrPC section → New BNS/BNSS section number + changes
 
-RULES: Never make up sections or cases. Simple language. Always give old IPC/CrPC equivalent.
+===RECENT DEVELOPMENTS===
+SC guidelines, amendments, important notifications 2020-2025
+
+===FREE RESOURCES===
+indiankanoon.org, sci.gov.in, ecourts.gov.in, indiacode.nic.in
+
+RULES: Never fabricate. Always old → new equivalents.
 ${langNote}`;
 
-    } else if (intent === 'CASE') {
-      system = `You are Legal Craft AI — India's case law research system.
+    }else if(intent==='CASE'){
+      system=`You are Legal Craft AI — India's most accurate case law research system.
 
-DATABASE CASES:
-${caseText||'Not in database'}
+DATABASE: ${caseText||'Not found'}
+WEB DATA: ${webData||'Use knowledge'}
 
-WEB DATA:
-${webData||'Use your legal knowledge'}
-
-RESPONSE FORMAT:
+MANDATORY FORMAT:
 ===CASE DETAILS===
-Full name, court, year, citation
+Full name | Court | Year | Citation | Bench (Judges)
 
 ===BACKGROUND===
-Parties and dispute
+Parties | Dispute | Why went to court
 
-===FACTS (Chronological)===
-What happened step by step
+===FACTS===
+Chronological step-by-step with dates
 
-===LEGAL ISSUES===
-Which articles/sections involved
+===LEGAL ISSUES FRAMED===
+Exact questions decided
 
 ===ARGUMENTS===
-Petitioner vs Respondent
+Petitioner's side vs Respondent's side
 
 ===JUDGMENT===
-Verdict in simple words; ratio decidendi
+Decision (simple words) | Ratio decidendi | Obiter dicta
 
 ===IMPACT===
-Why important; still good law?
+How law changed | Still good law? | Followed by which cases | Practical importance
 
-RULES: Never make up facts. Simple language. Full citation always.
+RULES: Exact citations. No fabrication. Simple clear language.
 ${langNote}`;
 
-    } else {
-      system = `You are Legal Craft AI — India's comprehensive legal intelligence system.
+    }else{
+      system=`You are Legal Craft AI — India's most accurate and comprehensive legal assistant.
 
-SECTIONS FOUND: ${secText||'Not found'}
-CASES FOUND: ${caseText||'Not found'}
-WEB DATA: ${webData||'Use your legal knowledge'}
+CAPABILITIES:
+- Upload photo/PDF → I can read and analyze any legal document
+- Ask any section → I give complete explanation with cases
+- Ask for draft → I give court-ready format
+- Ask any legal question → 99% accurate answer
 
-RULES:
-1. Prefer BNS 2023, BNSS 2023, BSA 2023
-2. Simple clear language
-3. Never guess — if not found say clearly
-4. Show sources
+DATABASE SECTIONS: ${secText||'Not found'}
+CASE LAWS: ${caseText||'Not found'}
+WEB DATA: ${webData||'Using knowledge base'}
+
+ACCURACY RULES:
+1. Always prefer BNS/BNSS/BSA 2023 over old IPC/CrPC
+2. Give old → new equivalents always
+3. Never fabricate sections or cases
+4. Step-by-step practical guidance always
+5. Mention free resources: indiankanoon.org, sci.gov.in, ecourts.gov.in
+6. For complex matters: recommend consulting advocate
+7. Mention ALL relevant time limits/deadlines
 ${langNote}`;
     }
 
-    // ── GROQ API CALL ─────────────────────────────────────
-    const gr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'system', content: system }, ...messages],
-        temperature: 0.1,
-        max_tokens: 4000,
+    const gr=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ}`},
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        messages:[{role:'system',content:system},...messages.slice(-14)],
+        temperature:0.05,
+        max_tokens:4096,
+        top_p:0.9,
       }),
     });
 
-    if (!gr.ok) {
-      const err = await gr.text();
-      console.error('Groq error:', err);
-      return res.status(500).json({ error: 'AI error. Please try again.' });
-    }
+    if(!gr.ok){const e=await gr.text();console.error('Groq:',e);return res.status(500).json({error:'AI service error. Try again.'});}
+    const gd=await gr.json();
+    const reply=gd.choices?.[0]?.message?.content||'Response generate nahi ho saka.';
 
-    const gd = await gr.json();
-    const reply = gd.choices?.[0]?.message?.content || 'Unable to generate response.';
+    return res.status(200).json({
+      reply,intent,
+      sources:sources.slice(0,5),
+      format_used:matchedFmt?.name||null,
+      format_key:matchedFmt?.format_key||null,
+      attachments_required:attachments.map(a=>a.name),
+      learned_applied:learnedCount>0?learnedCount:null,
+    });
 
-    return res.status(200).json({ reply, intent, sources: sources.slice(0,3) });
-
-  } catch (error) {
-    console.error('Server error:', error.message);
-    return res.status(500).json({ error: 'Server error: ' + error.message });
+  }catch(error){
+    console.error('Server error:',error.message);
+    return res.status(500).json({error:'Server error: '+error.message});
   }
 };
