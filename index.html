@@ -1,254 +1,493 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Legal Craft AI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    :root{--bg:#212121;--sb:#171717;--sur:#2f2f2f;--brd:#3f3f3f;--txt:#ececec;--mut:#8e8ea0;--grn:#10a37f;--grn2:#0d8f6f;}
-    html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);}
-    .app{display:flex;height:100vh;}
-    /* SIDEBAR */
-    .sb{width:256px;background:var(--sb);display:flex;flex-direction:column;padding:8px;flex-shrink:0;}
-    .new{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);color:var(--txt);font-size:13px;cursor:pointer;background:none;width:100%;margin-bottom:10px;font-family:'Inter',sans-serif;font-weight:500;transition:background 0.15s;}
-    .new:hover{background:rgba(255,255,255,0.05);}
-    .new svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
-    .lbl{font-size:10px;color:var(--mut);letter-spacing:0.07em;text-transform:uppercase;padding:10px 12px 5px;}
-    .si{padding:7px 12px;border-radius:8px;font-size:12px;color:var(--mut);cursor:pointer;transition:all 0.15s;margin:1px 0;line-height:1.4;}
-    .si:hover{background:rgba(255,255,255,0.05);color:var(--txt);}
-    .sbot{margin-top:auto;border-top:1px solid var(--brd);padding-top:8px;}
-    .lsel{width:100%;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid var(--brd);color:var(--txt);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;outline:none;}
-    .lsel option{background:#171717;}
-    /* MAIN */
-    .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-    .top{display:flex;align-items:center;justify-content:center;padding:13px;border-bottom:1px solid var(--brd);flex-shrink:0;position:relative;}
-    .ttl{font-size:15px;font-weight:600;}
-    .sub{position:absolute;right:16px;font-size:10px;background:rgba(16,163,127,0.12);color:var(--grn);border:1px solid rgba(16,163,127,0.25);padding:3px 10px;border-radius:20px;}
-    /* CHAT */
-    .cs{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
-    .cs::-webkit-scrollbar{width:4px;} .cs::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px;}
-    /* WELCOME */
-    .wl{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:18px;padding:30px 20px;text-align:center;}
-    .wico{width:52px;height:52px;background:var(--grn);border-radius:14px;display:flex;align-items:center;justify-content:center;}
-    .wico svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.8;}
-    .wt{font-size:24px;font-weight:600;}
-    .ws{font-size:13px;color:var(--mut);max-width:360px;line-height:1.75;}
-    .wg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:480px;}
-    .wc{background:rgba(255,255,255,0.04);border:1px solid var(--brd);border-radius:10px;padding:13px;cursor:pointer;text-align:left;transition:all 0.2s;font-size:12px;color:var(--mut);line-height:1.5;}
-    .wc:hover{border-color:rgba(16,163,127,0.4);color:var(--txt);background:rgba(16,163,127,0.05);}
-    .wc h4{font-size:13px;font-weight:500;color:var(--txt);margin-bottom:5px;}
-    /* MESSAGES */
-    .mr{padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
-    .mr.user{background:rgba(255,255,255,0.02);}
-    .mi{max-width:720px;margin:0 auto;padding:0 20px;display:flex;gap:14px;align-items:flex-start;}
-    .av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px;}
-    .av.ai{background:var(--grn);}
-    .av.user{background:#7c3aed;}
-    .mb{flex:1;font-size:14px;line-height:1.8;color:var(--txt);}
-    .mb p{margin:5px 0;} .mb h3{font-size:15px;font-weight:600;margin:14px 0 6px;color:#fff;} .mb h3:first-child{margin-top:0;}
-    .mb ul,.mb ol{padding-left:20px;margin:8px 0;} .mb li{margin:4px 0;color:#d4d4d4;}
-    .mb strong{font-weight:600;color:#fff;} .mb code{background:#1a1a1a;padding:2px 7px;border-radius:4px;font-size:12px;font-family:'Courier New',monospace;color:var(--grn);}
-    /* DRAFT */
-    .dd{background:#111;border:1px solid #333;border-left:4px solid var(--grn);border-radius:0 8px 8px 0;padding:18px 20px;margin:12px 0;font-size:13px;line-height:2;color:#d0d0d0;font-family:'Courier New',monospace;white-space:pre-wrap;word-break:break-word;}
-    .da{display:flex;gap:8px;margin-top:8px;}
-    .db{padding:6px 14px;border-radius:7px;font-size:12px;border:1px solid var(--brd);color:var(--mut);background:none;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s;}
-    .db:hover{background:rgba(255,255,255,0.05);color:var(--txt);}
-    .db.p{background:var(--grn);color:#fff;border-color:var(--grn);}
-    .db.p:hover{background:var(--grn2);}
-    /* SOURCES */
-    .src{margin-top:12px;background:rgba(255,255,255,0.03);border:1px solid var(--brd);border-radius:8px;padding:12px 14px;}
-    .srch{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;}
-    .srcr{display:flex;align-items:flex-start;gap:8px;margin:4px 0;}
-    .srcd{width:5px;height:5px;border-radius:50%;background:var(--grn);flex-shrink:0;margin-top:7px;}
-    .srcl{font-size:12px;color:var(--grn);text-decoration:none;line-height:1.5;}
-    .srcl:hover{text-decoration:underline;}
-    /* LOADING */
-    .dots{display:flex;gap:5px;padding:4px 0;}
-    .dot{width:7px;height:7px;border-radius:50%;background:var(--grn);opacity:0.3;animation:pulse 1.3s ease-in-out infinite;}
-    .dot:nth-child(2){animation-delay:0.2s;} .dot:nth-child(3){animation-delay:0.4s;}
-    @keyframes pulse{0%,100%{opacity:0.25;transform:scale(0.8);}50%{opacity:1;transform:scale(1.1);}}
-    /* INPUT */
-    .ia{padding:14px 20px 12px;flex-shrink:0;}
-    .ib{max-width:720px;margin:0 auto;background:var(--sur);border:1px solid var(--brd);border-radius:14px;display:flex;align-items:flex-end;gap:10px;padding:12px 16px;transition:border-color 0.2s;}
-    .ib:focus-within{border-color:rgba(16,163,127,0.4);}
-    .ci{flex:1;background:none;border:none;outline:none;color:var(--txt);font-family:'Inter',sans-serif;font-size:14px;resize:none;min-height:24px;max-height:160px;line-height:1.6;}
-    .ci::placeholder{color:var(--mut);}
-    .snd{width:34px;height:34px;border-radius:8px;background:var(--grn);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}
-    .snd:hover{background:var(--grn2);}
-    .snd:disabled{opacity:0.3;cursor:not-allowed;}
-    .snd svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.2;}
-    .in{max-width:720px;margin:8px auto 0;text-align:center;font-size:11px;color:var(--mut);}
-    @media(max-width:768px){.sb{display:none;}.wg{grid-template-columns:1fr;}}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+<title>Legal Craft AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#1a1a1a;--sb:#111;--sur:#2a2a2a;--brd:#333;--txt:#e8e8e8;--mut:#888;--grn:#10a37f;--grn2:#0d8f6f;--red:#ef4444;--yel:#f59e0b;}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);}
+.app{display:flex;height:100vh;}
+/* SIDEBAR */
+.sb{width:255px;background:var(--sb);display:flex;flex-direction:column;padding:8px;overflow-y:auto;flex-shrink:0;}
+.sb::-webkit-scrollbar{width:3px;}.sb::-webkit-scrollbar-thumb{background:#333;}
+.new-btn{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;border:1px solid var(--brd);color:var(--txt);font-size:13px;cursor:pointer;background:transparent;width:100%;margin-bottom:8px;font-family:'Inter',sans-serif;font-weight:500;transition:background .15s;}
+.new-btn:hover{background:rgba(255,255,255,.06);}
+.new-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;}
+.slabel{font-size:9.5px;color:var(--mut);letter-spacing:.08em;text-transform:uppercase;padding:8px 10px 3px;}
+.sitem{padding:5px 10px;border-radius:6px;font-size:11.5px;color:var(--mut);cursor:pointer;transition:all .15s;line-height:1.5;margin:1px 0;}
+.sitem:hover{background:rgba(255,255,255,.05);color:var(--txt);}
+.sbot{margin-top:auto;border-top:1px solid var(--brd);padding-top:8px;}
+.lsel{width:100%;padding:7px 10px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid var(--brd);color:var(--txt);font-size:12px;cursor:pointer;outline:none;font-family:'Inter',sans-serif;}
+.lsel option{background:#111;}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{display:flex;align-items:center;justify-content:center;padding:11px;border-bottom:1px solid var(--brd);flex-shrink:0;position:relative;}
+.ttl{font-size:14px;font-weight:600;}
+.badge{position:absolute;right:12px;font-size:9px;background:rgba(16,163,127,.1);color:var(--grn);border:1px solid rgba(16,163,127,.25);padding:3px 8px;border-radius:20px;}
+.chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+.chat::-webkit-scrollbar{width:4px;}.chat::-webkit-scrollbar-thumb{background:#333;}
+/* WELCOME */
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:24px 20px;text-align:center;}
+.wicon{width:52px;height:52px;background:var(--grn);border-radius:14px;display:flex;align-items:center;justify-content:center;}
+.wicon svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8;}
+.wtitle{font-size:22px;font-weight:600;}
+.wsub{font-size:13px;color:var(--mut);max-width:440px;line-height:1.7;}
+.wgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;width:100%;max-width:540px;}
+.wcard{background:rgba(255,255,255,.03);border:1px solid var(--brd);border-radius:9px;padding:12px;cursor:pointer;text-align:left;transition:all .2s;font-size:11.5px;color:var(--mut);line-height:1.5;}
+.wcard:hover{border-color:rgba(16,163,127,.4);color:var(--txt);background:rgba(16,163,127,.04);}
+.wcard h4{font-size:12.5px;font-weight:500;color:var(--txt);margin-bottom:4px;}
+/* MESSAGES */
+.msg-row{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.025);}
+.msg-row.user{background:rgba(255,255,255,.015);}
+.msg-inner{max-width:760px;margin:0 auto;padding:0 16px;display:flex;gap:11px;align-items:flex-start;}
+.av{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;margin-top:2px;}
+.av.ai{background:var(--grn);}
+.av.user{background:#7c3aed;}
+.body{flex:1;font-size:13.5px;line-height:1.8;color:var(--txt);}
+.body p{margin:4px 0;}.body h3{font-size:14px;font-weight:600;margin:12px 0 5px;color:#fff;}.body h3:first-child{margin-top:0;}
+.body ul,.body ol{padding-left:18px;margin:6px 0;}.body li{margin:3px 0;color:#ccc;}
+.body strong{font-weight:600;color:#fff;}
+/* IMAGE PREVIEW in chat */
+.img-preview{max-width:280px;border-radius:8px;border:1px solid var(--brd);margin-bottom:8px;display:block;}
+.img-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(16,163,127,.1);color:var(--grn);border:1px solid rgba(16,163,127,.25);padding:4px 10px;border-radius:6px;font-size:11px;margin-bottom:8px;}
+/* DRAFT */
+.draft-box{background:#0d0d0d;border:1px solid #222;border-left:3px solid var(--grn);border-radius:0 7px 7px 0;padding:16px 18px;margin:10px 0;font-size:12.5px;line-height:2;color:#ccc;font-family:'Courier New',monospace;white-space:pre-wrap;word-break:break-word;}
+.draft-actions{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap;}
+.abtn{padding:5px 13px;border-radius:6px;font-size:11.5px;border:1px solid var(--brd);color:var(--mut);background:transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;}
+.abtn:hover{background:rgba(255,255,255,.06);color:var(--txt);}
+.abtn.primary{background:var(--grn);color:#fff;border-color:var(--grn);}
+.abtn.primary:hover{background:var(--grn2);}
+.abtn.danger{background:rgba(239,68,68,.08);color:var(--red);border-color:rgba(239,68,68,.25);}
+.abtn.danger:hover{background:rgba(239,68,68,.15);}
+/* FEEDBACK */
+.fb-box{margin-top:8px;background:rgba(16,163,127,.04);border:1px solid rgba(16,163,127,.2);border-radius:8px;padding:12px;display:none;}
+.fb-box.open{display:block;}
+.fb-head{font-size:11px;color:var(--grn);margin-bottom:6px;font-weight:500;}
+.fb-desc{font-size:10.5px;color:var(--mut);margin-bottom:8px;line-height:1.5;}
+.fb-row{display:flex;gap:6px;align-items:flex-start;}
+.fb-ta{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--brd);border-radius:6px;color:var(--txt);font-size:12px;padding:8px 10px;font-family:'Inter',sans-serif;resize:vertical;min-height:55px;outline:none;}
+.fb-ta:focus{border-color:var(--grn);}
+.fb-btn{padding:8px 14px;background:var(--grn);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;font-family:'Inter',sans-serif;transition:background .15s;white-space:nowrap;}
+.fb-btn:hover{background:var(--grn2);}
+.fb-status{font-size:11px;margin-top:6px;display:none;padding:5px 8px;border-radius:5px;}
+.fb-status.ok{color:var(--grn);background:rgba(16,163,127,.1);display:block;}
+.fb-status.err{color:var(--red);background:rgba(239,68,68,.1);display:block;}
+/* SOURCES */
+.sources{margin-top:10px;background:rgba(255,255,255,.02);border:1px solid var(--brd);border-radius:7px;padding:10px 12px;}
+.src-head{font-size:9.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.src-row{display:flex;align-items:flex-start;gap:7px;margin:3px 0;}
+.src-dot{width:4px;height:4px;border-radius:50%;background:var(--grn);flex-shrink:0;margin-top:8px;}
+.src-a{font-size:11.5px;color:var(--grn);text-decoration:none;line-height:1.5;}
+.src-a:hover{text-decoration:underline;}
+/* LOADING */
+.dots{display:flex;gap:4px;padding:3px 0;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--grn);opacity:.3;animation:pulse 1.3s ease-in-out infinite;}
+.dot:nth-child(2){animation-delay:.2s;}.dot:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,100%{opacity:.25;transform:scale(.8);}50%{opacity:1;transform:scale(1.1);}}
+/* INPUT AREA */
+.input-area{padding:10px 16px 10px;flex-shrink:0;}
+/* IMAGE PREVIEW BAR */
+.img-preview-bar{max-width:760px;margin:0 auto 8px;display:none;align-items:center;gap:8px;background:rgba(16,163,127,.08);border:1px solid rgba(16,163,127,.2);border-radius:8px;padding:8px 12px;}
+.img-preview-bar.show{display:flex;}
+.img-thumb{width:40px;height:40px;border-radius:5px;object-fit:cover;border:1px solid var(--brd);}
+.img-name{flex:1;font-size:12px;color:var(--grn);}
+.img-remove{background:none;border:none;color:var(--mut);cursor:pointer;font-size:16px;padding:0 4px;}
+.img-remove:hover{color:var(--red);}
+.input-box{max-width:760px;margin:0 auto;background:var(--sur);border:1px solid var(--brd);border-radius:13px;display:flex;align-items:flex-end;gap:6px;padding:8px 10px;transition:border-color .2s;}
+.input-box:focus-within{border-color:rgba(16,163,127,.4);}
+/* UPLOAD BUTTONS */
+.upload-btns{display:flex;gap:4px;align-items:flex-end;}
+.up-btn{width:32px;height:32px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid var(--brd);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;color:var(--mut);}
+.up-btn:hover{background:rgba(16,163,127,.15);border-color:var(--grn);color:var(--grn);}
+.up-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;}
+.ci{flex:1;background:transparent;border:none;outline:none;color:var(--txt);font-family:'Inter',sans-serif;font-size:13.5px;resize:none;min-height:22px;max-height:150px;line-height:1.6;}
+.ci::placeholder{color:var(--mut);}
+.send-btn{width:32px;height:32px;border-radius:7px;background:var(--grn);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.send-btn:hover{background:var(--grn2);}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;}
+.send-btn svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.2;}
+.hint{max-width:760px;margin:5px auto 0;text-align:center;font-size:10px;color:var(--mut);}
+.learn-tag{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;background:rgba(16,163,127,.08);color:var(--grn);border:1px solid rgba(16,163,127,.2);padding:2px 7px;border-radius:20px;margin-left:6px;}
+@media(max-width:768px){.sb{display:none;}.wgrid{grid-template-columns:1fr;}}
+</style>
 </head>
 <body>
 <div class="app">
-  <div class="sb">
-    <button class="new" onclick="newChat()">
-      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      New Chat
-    </button>
-    <div class="lbl">Draft Karo</div>
-    <div class="si" onclick="ask('Bail application draft karo Section 483 BNSS — naam: , court: , FIR: , offence: ')">📄 Bail Application (S.483)</div>
-    <div class="si" onclick="ask('Anticipatory bail draft karo Section 482 BNSS — naam: , court: , reason: ')">🔒 Anticipatory Bail (S.482)</div>
-    <div class="si" onclick="ask('FIR complaint draft karo Section 173 BNSS — naam: , date: , place: , kya hua: ')">📋 FIR / Complaint</div>
-    <div class="si" onclick="ask('Legal notice draft karo Section 138 NI Act — cheque no: , amount: Rs., dishonour date: ')">⚖️ Legal Notice S.138</div>
-    <div class="si" onclick="ask('Quashing petition draft karo Section 528 BNSS — FIR no: , PS: , grounds: ')">❌ Quashing (S.528)</div>
-    <div class="si" onclick="ask('Divorce petition draft karo Section 13 HMA — naam: , marriage date: , grounds: cruelty')">💔 Divorce Petition</div>
-    <div class="si" onclick="ask('Consumer complaint draft karo — product: , company: , amount: Rs., defect: ')">🛒 Consumer Complaint</div>
-    <div class="si" onclick="ask('RTI application draft karo — department: , information: , time period: ')">📋 RTI Application</div>
-    <div class="si" onclick="ask('Sale deed draft karo — vendor: , purchaser: , property: , amount: Rs.')">🏠 Sale Deed</div>
-    <div class="si" onclick="ask('Legal notice draft karo — naam: , receiver: , amount: Rs., demand: ')">📩 Legal Notice (General)</div>
-    <div class="si" onclick="ask('Vakalatnama draft karo — client naam: , court: , case number: ')">📝 Vakalatnama</div>
-
-    <div class="lbl">Research Karo</div>
-    <div class="si" onclick="ask('BNS 2023 Section 103 kya hai — murder — leading cases ke saath explain karo')">⚖️ BNS S.103 Murder</div>
-    <div class="si" onclick="ask('BNS Section 85 kya hai — cruelty 498A — explain karo leading cases')">👨‍👩‍👧 BNS S.85 Cruelty</div>
-    <div class="si" onclick="ask('BNSS Section 482 anticipatory bail explain karo — Gurbaksh Singh case')">🔒 BNSS S.482 Ant.Bail</div>
-    <div class="si" onclick="ask('Article 21 Right to Life explain karo — Maneka Gandhi case ke saath')">📚 Article 21</div>
-    <div class="si" onclick="ask('Section 138 NI Act cheque bounce explain karo — leading cases')">💰 S.138 Cheque Bounce</div>
-    <div class="si" onclick="ask('Kesavananda Bharati case explain karo — facts aur judgment simple language mein')">🏛️ Kesavananda Case</div>
-
-    <div class="sbot">
-      <div class="lbl">Language / भाषा</div>
-      <select class="lsel" id="ls" onchange="lang=this.value">
-        <option value="English">English</option>
-        <option value="Hindi">हिंदी</option>
-        <option value="Marathi">मराठी</option>
-        <option value="Bengali">বাংলা</option>
-        <option value="Telugu">తెలుగు</option>
-        <option value="Tamil">தமிழ்</option>
-        <option value="Gujarati">ગુજરાતી</option>
-        <option value="Kannada">ಕನ್ನಡ</option>
-        <option value="Malayalam">മലയാളം</option>
-        <option value="Punjabi">ਪੰਜਾਬੀ</option>
-        <option value="Urdu">اردو</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="main">
-    <div class="top">
-      <span class="ttl">Legal Craft AI</span>
-      <span class="sub">BNS/BNSS/BSA 2023 · Verified · Official Templates</span>
-    </div>
-    <div class="cs" id="cs">
-      <div class="wl" id="wl">
-        <div class="wico"><svg viewBox="0 0 24 24"><path d="M12 3L4 7v10l8 4 8-4V7L12 3z"/><path d="M12 3v18M4 7l8 4 8-4"/></svg></div>
-        <div class="wt">Legal Craft AI</div>
-        <div class="ws">Koi bhi document draft karein, section samjhein, ya case research karein — verified Indian legal sources se.</div>
-        <div class="wg">
-          <div class="wc" onclick="ask('Bail application draft karo Section 483 BNSS — naam: Ram Kumar, court: Sessions Court Varanasi, FIR: 123/2024, offence: dhokha cheating')">
-            <h4>📄 Document Draft</h4>Bail, FIR, Notice, Petition — official format mein
-          </div>
-          <div class="wc" onclick="ask('Kesavananda Bharati v State of Kerala case explain karo simple language mein')">
-            <h4>🏛️ Case Research</h4>SC & HC judgements — facts, ratio, impact
-          </div>
-          <div class="wc" onclick="ask('BNS 2023 Section 103 murder explain karo — leading cases ke saath')">
-            <h4>📚 Section Explain</h4>BNS, BNSS, BSA, Constitution — verified text
-          </div>
-          <div class="wc" onclick="ask('Cheque bounce hua hai — Section 138 NI Act — kya process hai notice se court tak?')">
-            <h4>💬 Legal Query</h4>Koi bhi legal sawaal — step by step jawab
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="ia">
-      <div class="ib">
-        <textarea class="ci" id="ci" placeholder="Section poochein, case dhundein, ya document draft karwayein..." rows="1" onkeydown="onK(event)" oninput="rsz(this)"></textarea>
-        <button class="snd" id="sb" onclick="send()">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-        </button>
-      </div>
-      <div class="in">Legal Craft AI · BNS/BNSS/BSA 2023 Verified · 15+ Acts · Official Templates · Web Verified</div>
-    </div>
+<!-- SIDEBAR -->
+<div class="sb">
+  <button class="new-btn" onclick="newChat()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Chat</button>
+  <div class="slabel">📷 Document Analysis</div>
+  <div class="sitem" onclick="triggerCamera()">📷 Camera se Photo Lo</div>
+  <div class="sitem" onclick="triggerUpload('image')">🖼️ Photo/Image Upload</div>
+  <div class="sitem" onclick="triggerUpload('pdf')">📄 PDF Upload</div>
+  <div class="slabel">⚖️ Bail & Arrest</div>
+  <div class="sitem" onclick="ask('Regular bail application draft karo Section 483 BNSS — naam: , court: , FIR no: , offence: , district: ')">📄 Regular Bail (S.483)</div>
+  <div class="sitem" onclick="ask('Anticipatory bail draft karo Section 482 BNSS — naam: , court: Sessions Court, reason: ')">🔒 Anticipatory Bail (S.482)</div>
+  <div class="sitem" onclick="ask('Default bail draft karo Section 479 BNSS — naam: , arrest date: , max sentence: ')">⏰ Default Bail (S.479)</div>
+  <div class="slabel">📋 FIR & Police</div>
+  <div class="sitem" onclick="ask('FIR draft karo Section 173 BNSS — naam: , date: , place: , accused: , kya hua: ')">📋 FIR (S.173)</div>
+  <div class="sitem" onclick="ask('Zero FIR draft karo — naam: , incident place: , actual PS: ')">0️⃣ Zero FIR</div>
+  <div class="sitem" onclick="ask('Magistrate complaint draft karo Section 210 BNSS — naam: , accused: , offence: ')">👨‍⚖️ Magistrate Complaint</div>
+  <div class="slabel">🏛️ High Court</div>
+  <div class="sitem" onclick="ask('Quashing petition draft karo Section 528 BNSS — FIR no: , PS: , sections: , grounds: ')">❌ Quashing (S.528)</div>
+  <div class="sitem" onclick="ask('Writ petition draft karo Article 226 — petitioner: , respondent: , impugned order: , relief: ')">📜 Writ Petition</div>
+  <div class="sitem" onclick="ask('PIL draft karo — public issue: , state: , harm: , relief: ')">🌍 PIL</div>
+  <div class="slabel">👨‍👩‍👧 Family</div>
+  <div class="sitem" onclick="ask('Divorce petition draft karo Section 13 HMA — petitioner: , respondent: , marriage date: , grounds: cruelty')">💔 Divorce (S.13 HMA)</div>
+  <div class="sitem" onclick="ask('Mutual consent divorce draft karo Section 13B HMA — husband: , wife: , marriage date: , separation date: ')">🤝 Mutual Divorce (13B)</div>
+  <div class="sitem" onclick="ask('Maintenance application draft karo Section 125 BNSS — applicant: , respondent: , income: Rs.')">💰 Maintenance (S.125)</div>
+  <div class="sitem" onclick="ask('Domestic violence application draft karo Section 12 DV Act — aggrieved: , respondent: , violence: ')">🛡️ DV Application</div>
+  <div class="sitem" onclick="ask('Will draft karo — testator: , property: , heirs: ')">📝 Will / Vasiyat</div>
+  <div class="slabel">⚖️ Civil</div>
+  <div class="sitem" onclick="ask('Civil plaint draft karo — plaintiff: , defendant: , relief: recovery Rs.')">📄 Civil Plaint</div>
+  <div class="sitem" onclick="ask('Legal notice draft karo — client: , receiver: , amount: Rs., demand: ')">📩 Legal Notice</div>
+  <div class="sitem" onclick="ask('Vakalatnama draft karo — client: , court: , case no: ')">📝 Vakalatnama</div>
+  <div class="slabel">💼 NI Act</div>
+  <div class="sitem" onclick="ask('Legal notice draft karo Section 138 NI Act cheque bounce — cheque no: , amount: Rs., bank: , dishonour date: ')">💳 Cheque Bounce Notice</div>
+  <div class="sitem" onclick="ask('Cheque bounce complaint draft karo Section 138 NI Act — cheque no: , amount: Rs., accused: , date: ')">⚖️ Cheque Complaint</div>
+  <div class="sitem" onclick="ask('Money recovery suit draft karo — plaintiff: , defendant: , amount: Rs., loan date: ')">💰 Recovery Suit</div>
+  <div class="slabel">🏠 Property</div>
+  <div class="sitem" onclick="ask('Sale deed draft karo Section 54 TPA — vendor: , purchaser: , property: , amount: Rs.')">🏠 Sale Deed</div>
+  <div class="sitem" onclick="ask('Rent agreement draft karo — landlord: , tenant: , property: , rent: Rs. per month')">🔑 Rent Agreement</div>
+  <div class="sitem" onclick="ask('RERA complaint draft karo — project: , builder: , paid: Rs., possession promised: ')">🏗️ RERA Complaint</div>
+  <div class="slabel">💻 Cyber & Rights</div>
+  <div class="sitem" onclick="ask('Cyber crime complaint draft karo — crime: online fraud, amount: Rs., platform: , date: ')">💻 Cyber FIR</div>
+  <div class="sitem" onclick="ask('SC ST atrocity complaint draft karo — caste: , accused: , incident: , date: ')">⚖️ SC/ST Atrocity</div>
+  <div class="sitem" onclick="ask('POSH complaint draft karo — complainant: , respondent: , incidents: ')">🛡️ POSH Complaint</div>
+  <div class="slabel">📋 Research</div>
+  <div class="sitem" onclick="ask('RTI application draft karo — department: , information needed: , period: ')">📋 RTI Application</div>
+  <div class="sitem" onclick="ask('Consumer complaint draft karo — product: , company: , amount: Rs., defect: ')">🛒 Consumer Complaint</div>
+  <div class="sitem" onclick="ask('Income tax notice reply draft karo — PAN: , AY: , notice section: , subject: ')">🧾 IT Notice Reply</div>
+  <div class="sitem" onclick="ask('NGT application draft karo — pollution type: , location: , polluter: , harm: ')">🌿 NGT Application</div>
+  <div class="sbot">
+    <div class="slabel">Language / भाषा</div>
+    <select class="lsel" id="ls" onchange="lang=this.value">
+      <option value="English">English</option>
+      <option value="Hindi">हिंदी</option>
+      <option value="Marathi">मराठी</option>
+      <option value="Bengali">বাংলা</option>
+      <option value="Telugu">తెలుగు</option>
+      <option value="Tamil">தமிழ்</option>
+      <option value="Gujarati">ગુજરાતી</option>
+      <option value="Kannada">ಕನ್ನಡ</option>
+      <option value="Malayalam">മലയാളം</option>
+      <option value="Punjabi">ਪੰਜਾਬੀ</option>
+      <option value="Urdu">اردو</option>
+    </select>
   </div>
 </div>
 
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <span class="ttl">Legal Craft AI</span>
+    <span class="badge">185+ Formats · Camera+PDF · 99% Accurate · Auto-Learning</span>
+  </div>
+  <div class="chat" id="chat">
+    <div class="welcome" id="wl">
+      <div class="wicon"><svg viewBox="0 0 24 24"><path d="M12 3L4 7v10l8 4 8-4V7L12 3z"/><path d="M12 3v18M4 7l8 4 8-4"/></svg></div>
+      <div class="wtitle">Legal Craft AI</div>
+      <div class="wsub">📷 Photo/PDF upload karke koi bhi legal document analyze karein · 185+ court-ready formats · Auto-learning system · BNS/BNSS/BSA 2023</div>
+      <div class="wgrid">
+        <div class="wcard" onclick="triggerCamera()"><h4>📷 Photo Khींcho</h4>Court order, FIR, notice ya koi bhi document — camera se photo lo, AI padhega</div>
+        <div class="wcard" onclick="triggerUpload('pdf')"><h4>📄 PDF Upload</h4>Legal document PDF upload karo — AI analyze karke batayega kya karna hai</div>
+        <div class="wcard" onclick="ask('Regular bail application draft karo Section 483 BNSS — naam: Ram Kumar, FIR: 456/2024, PS: Kotwali, offence: 318 BNS cheating, district: Varanasi')"><h4>📄 Draft Banao</h4>185+ court-ready formats — bail, FIR, notice, petition sab kuch</div>
+        <div class="wcard" onclick="ask('Contract Act Section 73 damages explain karo — plain language mein, BNS/BNSS 2023 ke saath')"><h4>📚 Section/Case Research</h4>Koi bhi dhara, case ya legal sawaal — 99% accurate jawab</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE PREVIEW BAR -->
+  <div class="img-preview-bar" id="ipb">
+    <img id="ithumb" class="img-thumb" src="" alt=""/>
+    <span class="img-name" id="iname">📎 Document attached</span>
+    <button class="img-remove" onclick="clearImage()" title="Remove">✕</button>
+  </div>
+
+  <div class="input-area">
+    <div class="input-box">
+      <div class="upload-btns">
+        <!-- Camera Button -->
+        <button class="up-btn" onclick="triggerCamera()" title="Camera se photo lo">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+        <!-- Upload Button -->
+        <button class="up-btn" onclick="triggerUpload('any')" title="Photo ya PDF upload karo">
+          <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        </button>
+      </div>
+      <textarea class="ci" id="ci" placeholder="Sawaal poochein, section dhundein, ya document upload karke analyze karein..." rows="1" onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+      <button class="send-btn" id="sb" onclick="send()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </div>
+    <div class="hint">📷 Camera · 📎 Upload Photo/PDF · 185+ Formats · User corrections improve results globally</div>
+  </div>
+</div>
+</div>
+
+<!-- HIDDEN INPUTS -->
+<input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFile(event,'camera')"/>
+<input type="file" id="uploadInput" accept="image/*,.pdf,application/pdf" style="display:none" onchange="handleFile(event,'upload')"/>
+
 <script>
-let msgs=[], lang='English', busy=false;
+let msgs=[],lang='English',busy=false;
+let pendingImage=null,pendingImageType=null,pendingImageName=null;
 
-function ask(q){ const i=document.getElementById('ci'); i.value=q; rsz(i); send(); }
+// ── SIDEBAR QUICK ACTIONS ──────────────────────────────────
+function ask(q){const i=document.getElementById('ci');i.value=q;resize(i);send();}
+
 function newChat(){
-  msgs=[];
-  const c=document.getElementById('cs'); c.innerHTML='';
-  const w=document.createElement('div'); w.className='wl'; w.id='wl';
-  w.innerHTML=`<div class="wico"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 3L4 7v10l8 4 8-4V7L12 3z"/><path d="M12 3v18M4 7l8 4 8-4"/></svg></div><div class="wt">Legal Craft AI</div><div class="ws">Naya sawaal poochein.</div>`;
-  c.appendChild(w);
-}
-function onK(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } }
-function rsz(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,160)+'px'; }
-function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function rmW(){ const w=document.getElementById('wl'); if(w) w.remove(); }
-
-function addU(text){
-  rmW();
-  const c=document.getElementById('cs');
-  const r=document.createElement('div'); r.className='mr user';
-  r.innerHTML=`<div class="mi"><div class="av user">U</div><div class="mb"><p>${esc(text).replace(/\n/g,'<br>')}</p></div></div>`;
-  c.appendChild(r); c.scrollTop=c.scrollHeight;
+  msgs=[];clearImage();
+  document.getElementById('chat').innerHTML='';
+  const w=document.createElement('div');w.className='welcome';w.id='wl';
+  w.innerHTML='<div class="wicon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 3L4 7v10l8 4 8-4V7L12 3z"/><path d="M12 3v18M4 7l8 4 8-4"/></svg></div><div class="wtitle">Legal Craft AI</div><div class="wsub">📷 Photo upload karo ya sawaal poochein</div>';
+  document.getElementById('chat').appendChild(w);
 }
 
-function addA(){
-  const c=document.getElementById('cs');
-  const r=document.createElement('div'); r.className='mr';
-  const i=document.createElement('div'); i.className='mi';
-  const a=document.createElement('div'); a.className='av ai'; a.textContent='LC';
-  const b=document.createElement('div'); b.className='mb';
-  b.innerHTML='<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
-  i.appendChild(a); i.appendChild(b); r.appendChild(i); c.appendChild(r);
-  c.scrollTop=c.scrollHeight; return b;
+// ── CAMERA / UPLOAD TRIGGERS ───────────────────────────────
+function triggerCamera(){document.getElementById('cameraInput').click();}
+function triggerUpload(t){
+  const inp=document.getElementById('uploadInput');
+  inp.accept=t==='pdf'?'.pdf,application/pdf':t==='image'?'image/*':'image/*,.pdf,application/pdf';
+  inp.click();
 }
 
-function copy(id){ const el=document.getElementById(id); if(el) navigator.clipboard.writeText(el.innerText).then(()=>alert('Draft copied! Paste in Word/Google Docs.')); }
+// ── HANDLE FILE (Image or PDF) ─────────────────────────────
+async function handleFile(e, src){
+  const file=e.target.files[0];
+  if(!file)return;
+  e.target.value=''; // Reset input
 
-function fmt(text, sources){
-  let dh='', did='d'+Date.now();
+  const maxSize=10*1024*1024; // 10MB
+  if(file.size>maxSize){
+    alert('File bahut badi hai! Maximum 10MB allowed hai.');
+    return;
+  }
+
+  const isPdf=file.type==='application/pdf'||file.name.endsWith('.pdf');
+  const isImage=file.type.startsWith('image/');
+
+  if(!isPdf&&!isImage){
+    alert('Sirf image (JPG/PNG) ya PDF files allowed hain!');
+    return;
+  }
+
+  try{
+    const base64=await fileToBase64(file);
+    pendingImage=base64;
+    pendingImageType=isPdf?'application/pdf':file.type;
+    pendingImageName=file.name;
+
+    // Show preview bar
+    const bar=document.getElementById('ipb');
+    bar.classList.add('show');
+    document.getElementById('iname').textContent=`📎 ${file.name} (${(file.size/1024).toFixed(0)}KB)`;
+
+    if(isImage){
+      const thumb=document.getElementById('ithumb');
+      thumb.src=`data:${file.type};base64,${base64}`;
+      thumb.style.display='block';
+    }else{
+      document.getElementById('ithumb').style.display='none';
+    }
+
+    // Auto-focus input
+    const ci=document.getElementById('ci');
+    ci.focus();
+    if(!ci.value){
+      ci.value=isPdf?'Is PDF document ko analyze karo aur batao kya hai isme?':'Is document/image ko padhkar batao kya hai isme? Kya karna chahiye?';
+      resize(ci);
+    }
+  }catch(err){
+    console.error('File error:',err);
+    alert('File process nahi ho saka. Please try again.');
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(r.result.split(',')[1]);
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function clearImage(){
+  pendingImage=null;pendingImageType=null;pendingImageName=null;
+  document.getElementById('ipb').classList.remove('show');
+  document.getElementById('ithumb').src='';
+}
+
+// ── CHAT HELPERS ───────────────────────────────────────────
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,150)+'px';}
+function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function rmWelcome(){const w=document.getElementById('wl');if(w)w.remove();}
+
+function addUser(text,imgName){
+  rmWelcome();
+  const c=document.getElementById('chat');
+  const r=document.createElement('div');r.className='msg-row user';
+  let imgHtml=imgName?`<div class="img-badge">📎 ${esc(imgName)}</div><br>`:'';
+  r.innerHTML=`<div class="msg-inner"><div class="av user">U</div><div class="body">${imgHtml}<p>${esc(text).replace(/\n/g,'<br>')}</p></div></div>`;
+  c.appendChild(r);c.scrollTop=c.scrollHeight;
+}
+
+function addAI(){
+  const c=document.getElementById('chat');
+  const r=document.createElement('div');r.className='msg-row';
+  const inner=document.createElement('div');inner.className='msg-inner';
+  const av=document.createElement('div');av.className='av ai';av.textContent='LC';
+  const body=document.createElement('div');body.className='body';
+  body.innerHTML='<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  inner.appendChild(av);inner.appendChild(body);r.appendChild(inner);c.appendChild(r);
+  c.scrollTop=c.scrollHeight;return body;
+}
+
+// ── COPY DRAFT ─────────────────────────────────────────────
+function copyDraft(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  navigator.clipboard.writeText(el.innerText).then(()=>{
+    const btn=document.getElementById('cp-'+id);
+    if(btn){const o=btn.textContent;btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent=o,2000);}
+  }).catch(()=>alert('Copy failed. Please select and copy manually.'));
+}
+
+// ── FEEDBACK TOGGLE ────────────────────────────────────────
+function toggleFB(id){const fb=document.getElementById(id);if(fb)fb.classList.toggle('open');}
+
+// ── SUBMIT CORRECTION (AUTO-LEARNING) ─────────────────────
+async function submitCorr(fbId,dtype){
+  const fb=document.getElementById(fbId);if(!fb)return;
+  const ta=fb.querySelector('.fb-ta');
+  const btn=fb.querySelector('.fb-btn');
+  const st=fb.querySelector('.fb-status');
+  const txt=(ta.value||'').trim();
+  if(!txt){ta.style.borderColor='var(--red)';setTimeout(()=>ta.style.borderColor='',2000);return;}
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const r=await fetch('/api/learn',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'save',draft_type:dtype||'general',field:'format',correct_text:txt,device_id:navigator.userAgent.slice(0,60)})
+    });
+    const d=await r.json();
+    if(d.success){
+      st.className='fb-status ok';st.textContent='✅ '+d.msg;
+      ta.value='';
+      setTimeout(()=>{st.className='fb-status';fb.classList.remove('open');},3500);
+    }else throw new Error(d.msg||'Failed');
+  }catch(err){
+    st.className='fb-status err';st.textContent='⚠️ Could not save. Please try again.';
+    setTimeout(()=>st.className='fb-status',3000);
+  }
+  btn.disabled=false;btn.textContent='Submit';
+}
+
+// ── FORMAT AI RESPONSE ─────────────────────────────────────
+function fmtReply(text,sources,fmtUsed,learned){
+  const uid='m'+Date.now()+Math.random().toString(36).slice(2,5);
+  const fbId='fb'+uid;
+  const dtype=(fmtUsed||'general').toLowerCase().replace(/\s+/g,'_');
+  let draftHtml='';
+
   const m=text.match(/---DRAFT START---([\s\S]*?)---DRAFT END---/);
   if(m){
-    dh=`<div class="dd" id="${did}">${esc(m[1].trim())}</div><div class="da"><button class="db p" onclick="copy('${did}')">📋 Copy Draft</button><button class="db" onclick="window.print()">🖨️ Print</button></div>`;
-    text=text.replace(/---DRAFT START---[\s\S]*?---DRAFT END---/,'__D__');
+    const draftTxt=m[1].trim();
+    draftHtml=`<div class="draft-box" id="${uid}">${esc(draftTxt)}</div>
+<div class="draft-actions">
+  <button class="abtn primary" id="cp-${uid}" onclick="copyDraft('${uid}')">📋 Copy Draft</button>
+  <button class="abtn" onclick="window.print()">🖨️ Print</button>
+  <button class="abtn danger" onclick="toggleFB('${fbId}')">✏️ Suggest Correction</button>
+</div>
+<div class="fb-box" id="${fbId}">
+  <div class="fb-head">🧠 Format Galat Hai? Correction Batao — System Seekhega!</div>
+  <div class="fb-desc">Aapka correction Vercel KV mein globally save hoga → Next user ko better result milega automatically. 3+ votes = auto-verified → highest priority.</div>
+  <div class="fb-row">
+    <textarea class="fb-ta" placeholder="Correct format, missing clause, wrong section, ya koi improvement likho..."></textarea>
+    <button class="fb-btn" onclick="submitCorr('${fbId}','${dtype}')">Submit</button>
+  </div>
+  <div class="fb-status"></div>
+</div>`;
+    text=text.replace(/---DRAFT START---[\s\S]*?---DRAFT END---/,'__DRAFT__');
   }
+
   let html=text
     .replace(/===(.+?)===/g,'<h3>$1</h3>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/`([^`]+)`/g,'<code>$1</code>')
-    .replace(/__D__/,dh)
+    .replace(/__DRAFT__/,draftHtml)
     .split('\n\n').map(p=>{
-      if(!p.trim()) return '';
-      if(p.startsWith('<')) return p;
-      if(p.startsWith('- ')||p.startsWith('* ')) return '<ul>'+p.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^[-*]\s*/,'')}</li>`).join('')+'</ul>';
-      if(/^\d+\./.test(p)) return '<ol>'+p.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^\d+\.\s*/,'')}</li>`).join('')+'</ol>';
-      return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+      if(!p.trim())return'';
+      if(p.startsWith('<'))return p;
+      if(p.trim().match(/^[-*]\s/)){return'<ul>'+p.split('\n').filter(l=>l.trim()).map(l=>`<li>${esc(l.replace(/^[-*]\s*/,''))}</li>`).join('')+'</ul>';}
+      if(/^\d+\.\s/.test(p.trim())){return'<ol>'+p.split('\n').filter(l=>l.trim()).map(l=>`<li>${esc(l.replace(/^\d+\.\s*/,''))}</li>`).join('')+'</ol>';}
+      return`<p>${p.replace(/\n/g,'<br>')}</p>`;
     }).join('');
-  if(sources&&sources.length>0)
-    html+=`<div class="src"><div class="srch">📚 Verified Sources</div>${sources.map(s=>`<div class="srcr"><div class="srcd"></div><a class="srcl" href="${s.url}" target="_blank">${s.title}</a></div>`).join('')}</div>`;
+
+  if(sources&&sources.length>0){
+    html+=`<div class="sources"><div class="src-head">📚 Verified Sources</div>${sources.map(s=>`<div class="src-row"><div class="src-dot"></div><a class="src-a" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title||s.url)}</a></div>`).join('')}</div>`;
+  }
+
+  if(!m){
+    const fbId2='fb2'+uid;
+    html+=`<div class="draft-actions" style="margin-top:10px;"><button class="abtn danger" onclick="toggleFB('${fbId2}')">✏️ Better Answer Batao</button></div>
+<div class="fb-box" id="${fbId2}">
+  <div class="fb-head">🧠 Better Answer Hai? Batao!</div>
+  <div class="fb-row"><textarea class="fb-ta" placeholder="Better answer ya correction..."></textarea><button class="fb-btn" onclick="submitCorr('${fbId2}','${dtype}')">Submit</button></div>
+  <div class="fb-status"></div>
+</div>`;
+  }
+
+  if(learned){html=`<div style="margin-bottom:8px;"><span class="learn-tag">🧠 ${learned} user correction(s) applied</span></div>`+html;}
   return html;
 }
 
+// ── MAIN SEND ──────────────────────────────────────────────
 async function send(){
-  if(busy) return;
+  if(busy)return;
   const inp=document.getElementById('ci');
-  const text=inp.value.trim(); if(!text) return;
-  inp.value=''; inp.style.height='auto';
-  addU(text);
-  msgs.push({role:'user',content:(lang!=='English'?`[Respond in ${lang}] `:'')+text});
-  busy=true; document.getElementById('sb').disabled=true;
-  const ab=addA();
+  const text=inp.value.trim();
+  if(!text&&!pendingImage)return;
+
+  const queryText=text||'Is document ko analyze karo aur batao kya karna chahiye.';
+  const imgName=pendingImageName;
+  const imgData=pendingImage;
+  const imgType=pendingImageType;
+
+  inp.value='';inp.style.height='auto';
+  addUser(queryText,imgName);
+  clearImage();
+
+  const langPrefix=lang!=='English'?`[Respond entirely in ${lang}] `:'';
+  msgs.push({role:'user',content:langPrefix+queryText});
+
+  busy=true;document.getElementById('sb').disabled=true;
+  const aiBody=addAI();
+
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msgs,language:lang})});
-    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const payload={messages:msgs.slice(-14),language:lang};
+    if(imgData){payload.imageData=imgData;payload.imageType=imgType;}
+
+    const r=await fetch('/api/chat',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok)throw new Error(`HTTP ${r.status}: ${r.statusText}`);
     const d=await r.json();
-    const reply=d.reply||'Response generate nahi ho saka.';
-    ab.innerHTML=fmt(reply,d.sources);
+    const reply=d.reply||'Response nahi mila.';
+    aiBody.innerHTML=fmtReply(reply,d.sources,d.format_used,d.learned_applied);
     msgs.push({role:'assistant',content:reply});
-  }catch(e){
-    ab.innerHTML=`<p style="color:#f87171;">Error: ${e.message}. Please try again.</p>`;
+    if(msgs.length>24)msgs=msgs.slice(-24);
+  }catch(err){
+    aiBody.innerHTML=`<p style="color:var(--red);">⚠️ Error: ${esc(err.message)}. Please try again.</p>`;
   }
-  busy=false; document.getElementById('sb').disabled=false;
-  document.getElementById('cs').scrollTop=99999;
+  busy=false;document.getElementById('sb').disabled=false;
+  document.getElementById('chat').scrollTop=99999;
 }
 </script>
 </body>
