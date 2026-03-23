@@ -28,6 +28,14 @@ const RIGHTS      = require('./data/formats/rights_formats.js');
 const WRITS       = require('./data/formats/writ_formats.js');
 const MATRIMONIAL = require('./data/formats/matrimonial_formats.js');
 const NOTICE_V2   = require('./data/formats/notice_formats_v2.js');
+// ── PERSONAL LAW ACTS — Complete Bare Acts ─────────────────
+const HMA_1955    = require('./data/acts/hma_complete.js');
+const HAMA_1956   = require('./data/acts/hama_complete.js');
+const IFA_1927    = require('./data/acts/ifa_complete.js');
+const HSA_1956    = require('./data/acts/hsa_complete.js');
+const HMGA_1956   = require('./data/acts/hmga_complete.js');
+const MPL_1937    = require('./data/acts/mpl_complete.js');
+const DMM_1939    = require('./data/acts/dmm_complete.js');
 const CONTRACT    = require('./data/contract.js');
 const BNS         = require('./data/bns.js');
 const BNSS        = require('./data/bnss.js');
@@ -37,6 +45,15 @@ const CASES       = require('./data/cases.js');
 const LEARNING    = require('./data/learning/learning_system.js');
 
 const SECTIONS_DB = [
+  // ── PERSONAL LAW ACTS — From Bare Acts (Exact Statutory Text) ──
+  // ── Complete Bare Acts (all sections, exact statutory text) ──
+  ...HMA_1955.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
+  ...HAMA_1956.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
+  ...IFA_1927.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
+  ...HSA_1956.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
+  ...HMGA_1956.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
+  ...MPL_1937.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
+  ...DMM_1939.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
   ...CONTRACT.map(x=>({...x,act:x.act||"Contract Act 1872"})),
   ...BNS.map(x=>({...x,act:x.act||"BNS 2023"})),
   ...BNSS.map(x=>({...x,act:x.act||"BNSS 2023"})),
@@ -315,82 +332,113 @@ CRITICAL RECENT CHANGES:
 - SC/ST Act = NO anticipatory bail (Prathvi Raj Chauhan 2020)`;
 
 // ══════════════════════════════════════════════════════════
-// MULTI-LANGUAGE VISION PROMPT
-// Handles documents in ANY language/script
 // ══════════════════════════════════════════════════════════
-function buildVisionPrompt(userQuery, lang){
-  return `You are LegalCraft AI — India's most accurate legal document analyzer.
+// MULTI-LANGUAGE VISION PROMPT — Up to 6 documents
+// ══════════════════════════════════════════════════════════
+function buildVisionPrompt(userQuery, lang, numDocs=1){
+  const multiDocNote = numDocs > 1
+    ? `You are analyzing ${numDocs} legal documents TOGETHER.
+Cross-reference them: find connections, contradictions, missing links, and how they collectively affect the legal situation.
+Number each document finding separately: [Doc 1], [Doc 2], etc.
 
-IMPORTANT: This document may be in ANY language or script — Hindi, Urdu, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, English, or mixed languages. Read ALL text regardless of script.
+`
+    : '';
 
-USER QUERY: "${userQuery}"
+  return `${multiDocNote}You are a Senior Advocate + Legal Document Analyst.
 
-══════════════════════════════════════════════
-PHASE 1: COMPLETE TEXT EXTRACTION (ANY LANGUAGE)
-══════════════════════════════════════════════
-Read EVERY word in EVERY script/language present.
-Extract and translate to English if needed:
+LANGUAGE CAPABILITY: Read documents in ANY script/language:
+Hindi (Devanagari) | Urdu (Nastaliq) | Bengali | Tamil | Telugu | Marathi | Gujarati | Kannada | Malayalam | Punjabi (Gurmukhi) | Odia | English | Mixed scripts | Handwritten text | Stamped/sealed documents
 
-• ALL section/dhara numbers (BNS/BNSS/BSA/IPC/CrPC/CPC or any act)
-• ALL dates and deadlines (respond by, file by, vakance dates)
-• ALL party names — accused, complainant, petitioner, respondent
-• ALL court/forum names and case numbers
-• ALL amounts — fine, compensation, loan, cheque
-• ALL orders and directions given
-• ALL conditions attached
-• ALL stamp/seal text
-• ALL footnotes and endorsements
+USER'S REQUEST: "${userQuery}"
 
-══════════════════════════════════════════════
-PHASE 2: DOCUMENT IDENTIFICATION
-══════════════════════════════════════════════
-Identify document type:
-FIR/Pratham Suchna Prativedana | Court Order/Nyayalay Adesh | Legal Notice | Cheque/Hundi | Contract/Samjhauta | Sale Deed/Sale Patra | Bail Order | Charge Sheet/Aropapatra | Tax Notice | Writ Petition | Judgment/Nirnay | Affidavit/Shapatpatra | Property Document | Identity Document | Police Notice | Summons/Samana | Warrant | Other
+════════════════════════════════════════════════
+STEP 1: EXTRACT ALL TEXT (Every document)
+════════════════════════════════════════════════
+For EACH document, extract EVERY piece of text:
+□ Document heading/title
+□ All section/dhara numbers (BNS/BNSS/BSA 2023 or old IPC/CrPC)
+□ All dates (issue date, hearing date, deadline, limitation period)
+□ All party names (petitioner, respondent, accused, complainant, plaintiff, defendant)
+□ All court/authority names and case numbers/FIR numbers
+□ All monetary amounts (fine, compensation, loan amount, cheque value)
+□ All orders, directions and conditions imposed
+□ Stamp details, signatures, seals, endorsements
+□ Any attachments or enclosures mentioned
+□ All footnotes, margin notes, corrections
 
-══════════════════════════════════════════════
-PHASE 3: RESPOND TO USER QUERY
-══════════════════════════════════════════════
-USER ASKED: "${userQuery}"
+If non-English script: transliterate AND translate to English
 
-IF USER WANTS EXPLANATION:
-===DOCUMENT IDENTIFIED===
-[Type | Language/Script found | Issued by | Date | Parties involved]
+════════════════════════════════════════════════
+STEP 2: PROFESSIONAL ADVOCATE ANALYSIS
+════════════════════════════════════════════════
 
-===COMPLETE EXTRACTED TEXT===
-[Write out ALL important text — translate non-English to English]
-[If Hindi/Urdu Devanagari/Nastaliq: transliterate AND translate]
+## 📋 DOCUMENT OVERVIEW
+**Type:** [FIR/Court Order/Legal Notice/Cheque/Contract/Sale Deed/Bail Order/Chargesheet/Writ/Judgment/Affidavit/Property Doc/Summons/Warrant/Tax Notice/Other]
+**Language/Script:** [as found in document]
+**Issued by:** [authority/court/person]
+**Date:** [document date]
+**Parties:** Petitioner/Complainant vs Respondent/Accused
 
-===WHAT THIS DOCUMENT MEANS===
-[Plain language — what is legally happening]
+## 📄 COMPLETE EXTRACTED TEXT
+[Write out ALL text extracted — nothing skipped]
+[Non-English parts: show original script + English translation]
 
-===SECTIONS/DHARA EXPLAINED===
-[Each legal provision mentioned:
- Original: "Dhara 173 BNSS 2023"
- Meaning: [explain in simple words]
- Old equivalent: [if applicable]]
+## ⚖️ LEGAL ANALYSIS
 
-===CRITICAL DEADLINES=== ⚠️
-[ANY response deadline, appearance date, vakance date — HIGHLIGHT with WARNING]
-[If deadline has passed — say so clearly]
+### What This Document Means (Simple Language)
+[2-3 paragraphs — what is legally happening, what are the consequences]
 
-===RECOMMENDED ACTIONS===
-Step 1: [most urgent]
-Step 2: [next step]
-Step 3: [and so on]
-[Be specific — which court, which office, which form]
+### Applicable Law
+[For each section/dhara mentioned:]
+- **S.[Number] [Act Name]:** [What this section says + what it means for the parties]
+- **New Law Equivalent:** [Old IPC/CrPC → BNS/BNSS/BSA 2023 mapping]
 
-IF USER WANTS DRAFT BASED ON DOCUMENT:
-Extract all details → Create complete court-ready draft using those details
+### Strength of the Document
+[Is it legally valid? Any defects? Stamp duty paid? Proper format?]
+
+## ⚠️ CRITICAL DEADLINES & URGENCY
+[LIST EVERY deadline with date and days remaining/elapsed]
+🔴 **URGENT (Past deadline):** [what was missed]
+🟡 **Due Soon:** [upcoming deadlines]
+🟢 **Future dates:** [hearing/appearance dates]
+
+## 🏛️ ADVOCATE'S ASSESSMENT
+
+### For the Client (Plain Language)
+[Explain situation as if explaining to the client directly]
+
+### Legal Position
+- **Strengths:** [favorable points]
+- **Risks:** [unfavorable points]
+- **Missing elements:** [what's lacking, what should have been there]
+
+### Evidence Required
+[List documents/witnesses needed]
+
+## 📝 RECOMMENDED IMMEDIATE ACTIONS
+**Step 1 (Do Today):** [most urgent action]
+**Step 2 (This Week):** [next priority]
+**Step 3 (Before Deadline):** [what must be done before the deadline]
+**Step 4 (Long-term):** [strategic advice]
+
+[Be specific: which court, which office, which form number, which authority, which advocate to consult]
+
+## 📋 DRAFT DOCUMENT (If requested)
+${numDocs > 1 ? `[If user asked for a draft, use details from ALL ${numDocs} documents to create it]` : '[If user asked for a draft, use all extracted details]'}
+
 ---DRAFT START---
-[Use all extracted details to create the document requested]
+[Complete court-ready draft using extracted details]
 ---DRAFT END---
 
-CRITICAL RULES:
-• Every old IPC/CrPC/Evidence Act section → give BNS/BNSS/BSA 2023 equivalent
-• ⚠️ Any missed deadline = URGENT WARNING at top
-• If document is in Hindi/regional language — translate key parts
-• Be 100% accurate — court documents have legal consequences
-${lang && lang !== 'English' ? `\nRespond in ${lang}.` : ''}`;
+RULES:
+1. Every old IPC/CrPC section → give BNS/BNSS/BSA 2023 equivalent immediately
+2. ⚠️ Missed deadline = RED WARNING at very top of response
+3. Translate/transliterate ALL non-English text
+4. Never guess — if text is unclear, say so
+5. Be precise with amounts, dates, names — legal documents have consequences
+6. If ${numDocs > 1 ? `documents contradict each other — highlight immediately` : `document seems forged or has issues — flag immediately`}
+${lang && lang !== 'English' ? `
+Respond in ${lang}.` : ''}`;
 }
 
 // ── MAIN HANDLER ──────────────────────────────────────────
@@ -402,7 +450,7 @@ module.exports = async function handler(req, res){
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
 
   try{
-    const{messages, language, imageData, imageType} = req.body;
+    const{messages, language, imageData, imageType, images} = req.body;
     if(!messages||!Array.isArray(messages)) return res.status(400).json({error:'Invalid request'});
 
     const GROQ   = process.env.GROQ_API_KEY;
@@ -410,8 +458,16 @@ module.exports = async function handler(req, res){
     if(!GROQ) return res.status(500).json({error:'GROQ_API_KEY not configured'});
 
     const lastMsg   = messages[messages.length-1];
-    const userQuery = (lastMsg?.content||'').slice(0,2000);
-    const hasImage  = !!(imageData && imageType);
+    const userQuery = (lastMsg?.content||'').slice(0,3000);
+    
+    // Support both single image (legacy) and multiple images (new)
+    let allImages = [];
+    if(images && Array.isArray(images) && images.length > 0){
+      allImages = images; // [{data, type, name}]
+    } else if(imageData && imageType){
+      allImages = [{data: imageData, type: imageType, name: 'document'}];
+    }
+    const hasImage = allImages.length > 0;
     const langNote  = (language && language!=='English') ? language : '';
     const intent    = classifyIntent(userQuery, hasImage);
     const allMsgsText = messages.map(m=>m.content||'').join(' ');
@@ -427,32 +483,90 @@ module.exports = async function handler(req, res){
       try{ templateText = matchedFmt.generate(fields); }catch(e){}
     }
 
-    // ── IMAGE / PDF MODE ──────────────────────────────────
+    // ── MULTI-IMAGE / PDF MODE ────────────────────────────
     if(hasImage){
+      // Build content array with all images
+      const contentParts = [];
+      
+      // Add all images (up to 6)
+      const imagesToProcess = allImages.slice(0, 6);
+      for(let i=0; i<imagesToProcess.length; i++){
+        const img = imagesToProcess[i];
+        contentParts.push({
+          type:'image_url',
+          image_url:{
+            url:`data:${img.type};base64,${img.data}`,
+            detail:'high'
+          }
+        });
+        if(imagesToProcess.length > 1){
+          contentParts.push({
+            type:'text',
+            text:`[Document ${i+1} of ${imagesToProcess.length}: ${img.name||'document'}]`
+          });
+        }
+      }
+      
+      // Add the analysis prompt
+      contentParts.push({
+        type:'text',
+        text: buildVisionPrompt(userQuery, langNote, imagesToProcess.length)
+      });
+      
       const vRes = await fetch('https://api.groq.com/openai/v1/chat/completions',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ}`},
         body:JSON.stringify({
           model:'meta-llama/llama-4-scout-17b-16e-instruct',
           messages:[
-            {role:'system', content:`${DRAFT_BRAIN}\n\n${ANALYSIS_BRAIN}\n\nYou can read documents in ANY Indian language — Hindi, Urdu, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, and mixed scripts. Always extract and translate all text before analysis.`},
-            {role:'user', content:[
-              {type:'image_url', image_url:{url:`data:${imageType};base64,${imageData}`, detail:'high'}},
-              {type:'text', text:buildVisionPrompt(userQuery, langNote)}
-            ]}
+            {role:'system', content:`${DRAFT_BRAIN}
+
+${ANALYSIS_BRAIN}
+
+You are analyzing ${imagesToProcess.length} legal document(s) simultaneously as a senior advocate.
+
+CRITICAL LANGUAGE CAPABILITIES:
+You can read documents in ANY Indian language:
+- Hindi (Devanagari script), Urdu (Nastaliq), Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi (Gurmukhi), Odia
+- Mixed scripts / bilingual documents
+- Handwritten legal documents
+- Stamped/watermarked court documents
+- Old or faded documents
+
+ALWAYS:
+1. Extract and display ALL text first (translate if non-English)
+2. Identify document type and legal nature
+3. Analyze as a professional advocate would
+4. Catch ALL deadlines, limitation periods, notices, amounts
+5. Give actionable legal advice based on the documents`},
+            {role:'user', content: contentParts}
           ],
-          temperature:0.02, max_tokens:3500,
+          temperature:0.02,
+          max_tokens:4000,
         }),
       });
-      let reply = 'Could not analyze. Please describe the document as text.';
+      
+      let reply = 'Could not analyze the document(s). Please try again or describe the content as text.';
       if(vRes.ok){
         const vd = await vRes.json();
         reply = vd.choices?.[0]?.message?.content || reply;
       } else {
         const err = await vRes.text();
-        console.error('Vision error:', err.slice(0,200));
+        console.error('Vision error:', err.slice(0,300));
+        // Try to parse error
+        try{
+          const errObj = JSON.parse(err);
+          reply = `Analysis error: ${errObj.error?.message || 'Please try with fewer/smaller images'}`;
+        }catch(e){}
       }
-      return res.status(200).json({reply, intent:'IMAGE', sources:[], format_used:'Document Analysis'});
+      
+      const docCount = imagesToProcess.length;
+      return res.status(200).json({
+        reply,
+        intent:'IMAGE',
+        sources:[],
+        format_used: docCount > 1 ? `${docCount} Documents Analyzed` : 'Document Analysis'
+      });
     }
 
     // ── SMART CLARIFICATION CHECK ─────────────────────────
@@ -533,7 +647,12 @@ ${langNote ? `Respond in ${langNote}.` : ''}`;
       }catch(e){}
     }
 
-    const secText  = localSections.map(s=>`${s.act} S.${s.s} "${s.t}": ${(s.d||'').slice(0,150)}`).join('\n');
+    const secMatch = localSections[0] || null;
+const secText = localSections.map(s=>{
+  const bare = s.bare || s.d || '';
+  return `${s.act} | S.${s.s} | "${s.t}"\nBARE ACT TEXT:\n${bare}`;
+}).join('\n\n---\n');
+const bareActForPrompt = secMatch ? (secMatch.bare || secMatch.d || '') : '';
     const caseText = localCases.map(c=>`${c.n} [${c.c}]: ${(c.h||'').slice(0,120)}`).join('\n');
 
     // ════════════════════════════════════════════════════════
@@ -601,33 +720,88 @@ ${langNote ? `\nRespond in ${langNote}.` : ''}`;
 
       system = `${ANALYSIS_BRAIN}
 
+YOU HAVE THESE DATABASE RESULTS:
 ACT: ${actHint}
-DB: ${secText||'Use knowledge above'}
-CASES: ${caseText||'Use landmark cases above'}
+${secText ? `MATCHED SECTION FROM DATABASE:\n${secText}` : 'NO DATABASE MATCH — use your comprehensive legal knowledge'}
+CASES: ${caseText||'Use landmark cases from your training'}
 WEB: ${webContext||'N/A'}
 
-MANDATORY FORMAT:
-===SECTION DETAILS===
-Act | Section | Old Equivalent | Nature | Punishment
+════════════════════════════════════════════════════
+MANDATORY OUTPUT FORMAT — FOLLOW EXACTLY THIS ORDER:
+════════════════════════════════════════════════════
 
-===EXACT STATUTORY TEXT===
-[COMPLETE verbatim text — all sub-sections, provisos, explanations]
-[NEVER abbreviate or summarize — give full text]
+## SECTION OVERVIEW
+**Act:** [Full Act Name and Year]  
+**Section:** [Number] | **Old Law:** [IPC/CrPC equivalent → BNS/BNSS if applicable]  
+**Nature:** [Bailable/Non-Bailable] | [Cognizable/Non-Cognizable] | [Civil/Criminal]  
+**Punishment:** [Exact — minimum and maximum if prescribed]
 
-===EXPLANATION===
-[Plain language — who, what, when, consequence, exceptions]
+---
 
-===LEADING CASES (3-5)===
-[Name | Citation | Facts 2-lines | Held | Current Status: Good Law ✓]
+## 📖 EXACT STATUTORY TEXT (Bare Act)
+${bareActForPrompt ? `> *The following is the exact statutory text from the bare act database:*
 
-===NEW LAW UPDATE===
-[Only if old IPC/CrPC: → new BNS/BNSS section + changes]
+${bareActForPrompt}` : `> *Write the COMPLETE verbatim text of this section — every word exactly as in the Act, all sub-sections (1)(2)(3...), all clauses (a)(b)(c...), all provisos, all Explanations. NEVER paraphrase. NEVER skip any part.*`}
 
-===PRACTICAL APPLICATION===
-[How courts apply this | Common issues | Time limits | Related sections]
+---
 
-RULE: Only discuss the specific act asked. Full text always. No fabricated cases.
-${langNote ? `Respond in ${langNote}.` : ''}`;
+## 💡 PLAIN LANGUAGE EXPLANATION
+[Write 2-3 clear paragraphs explaining what this section means in simple, everyday language. Cover: what it does, who it applies to, when it triggers, what consequences follow, important conditions.]
+
+---
+
+## 🔑 KEY POINTS
+• **Point 1:** [Most important thing about this section in one clear sentence]
+• **Point 2:** [Who can invoke this section and how]  
+• **Point 3:** [Key requirement, condition, or threshold]
+• **Point 4:** [Important exception, proviso, or limitation]
+• **Point 5:** [Time limit, procedure, or court having jurisdiction]
+• **Point 6:** [Burden of proof / presumption if any]
+• **Point 7:** [Related sections to read together]
+• **Point 8:** [Practical significance for litigants/advocates]
+
+---
+
+## 📚 DETAILED EXPLANATION OF KEY POINTS
+
+**🔹 [Title of Point 1]**
+[2-3 sentences elaborating with examples, case references, practical scenarios]
+
+**🔹 [Title of Point 2]**
+[2-3 sentences with practical illustration]
+
+**🔹 [Title of Point 3]**
+[Continue for all 8 key points — make each one genuinely useful]
+
+---
+
+## ⚖️ LANDMARK CASES
+[3–5 verified, currently good-law cases — NEVER fabricate]
+
+📌 **[Case Name] | [Court] | [Year] | [Citation]**
+- **Facts:** [What happened — 2 sentences]
+- **Held:** [Court's exact ruling]  
+- **Why it matters:** [Direct impact on how this section is applied]
+- **Status:** ✅ Good Law
+
+---
+
+## 🔄 NEW LAW UPDATE (2023 Acts)
+[ONLY if question involves old IPC/CrPC/Evidence Act:]
+| Old Law | New Law | Key Change |
+|---------|---------|------------|
+| IPC S.XXX | BNS S.XXX | [What changed] |
+
+---
+
+## 🏛️ ADVOCATE'S PRACTICAL GUIDE
+• **How to invoke:** [Specific procedure step-by-step]
+• **Documents needed:** [List]
+• **Strong arguments:** [Most effective legal arguments under this section]
+• **Common mistakes:** [What advocates get wrong — avoid these]
+• **Related sections:** [Read with S.XX, S.XX for complete picture]
+
+${langNote ? `\nRespond entirely in ${langNote}.` : ''}`;
 
     // ── CASE LAW ──────────────────────────────────────────
     } else if(intent === 'CASE'){
