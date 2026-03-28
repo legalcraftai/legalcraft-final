@@ -173,7 +173,7 @@ html,body{
 /* ════════════════════════════════════════════
    MAIN AREA
    ════════════════════════════════════════════ */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;height:100vh;height:100dvh;}
 
 /* ── TOPBAR ── */
 .topbar{
@@ -215,6 +215,7 @@ html,body{
 /* ── CHAT AREA ── */
 .chat-wrap{
   flex:1;
+  min-height:0; /* CRITICAL — allows flex child to shrink below content size */
   overflow-y:auto;
   overflow-x:hidden;
   scroll-behavior:smooth;
@@ -458,9 +459,8 @@ html,body{
 .input-area{
   padding:12px 20px 16px;
   background:var(--bg);
-  flex-shrink:0;
-  position:sticky;
-  bottom:0;
+  flex-shrink:0; /* never shrink */
+  position:relative; /* flex item — always at bottom of flex column */
   z-index:50;
   border-top:1px solid var(--border);
   box-shadow:0 -2px 12px rgba(0,0,0,0.05);
@@ -611,10 +611,10 @@ html,body{
   .suggestions{grid-template-columns:1fr 1fr;}
   .bubble{max-width:90%;}
   .chat-inner{padding:16px 16px 8px;}
-  .input-area{
-    padding:10px 16px 14px;
-    position:sticky;bottom:0;
-  }
+  /* Proper flex layout on tablet */
+  .main{height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+  .chat-wrap{flex:1;min-height:0;overflow-y:auto;}
+  .input-area{flex-shrink:0;padding:10px 16px 14px;}
 }
 
 /* MOBILE — below 768px */
@@ -640,9 +640,9 @@ html,body{
   .tb-sub{display:none;}
   .tb-right .clear-btn{display:none;}
   
-  /* Main takes full height */
+  /* Main takes full height on mobile */
   .main{
-    height:100%;height:100dvh;
+    height:100dvh;
     display:flex;flex-direction:column;
     overflow:hidden;
   }
@@ -650,23 +650,20 @@ html,body{
   /* Topbar fixed height */
   .topbar{flex-shrink:0;}
   
-  /* Chat area scrolls in remaining space */
-  .chat-area{
+  /* Chat area fills all available space and scrolls */
+  .chat-wrap{
     flex:1;
+    min-height:0;
     overflow-y:auto;
     overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
-    /* Extra bottom padding so content not hidden behind input bar */
-    padding-bottom:4px;
   }
   
-  /* Input bar — sticky at very bottom, always visible */
+  /* Input bar — always at bottom, never hidden */
   .input-area{
     flex-shrink:0;
     padding:8px 12px 12px;
-    /* Handle iOS safe area (notch phones) */
     padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-    position:sticky;bottom:0;
     background:var(--bg);
     z-index:50;
     border-top:1px solid var(--border);
@@ -842,27 +839,26 @@ html,body{
     </div>
   </div>
 
-  <!-- VOICE INDICATOR -->
-  <div class="voice-indicator" id="voice-ind">
-    <div class="voice-dots"><div class="vdot"></div><div class="vdot"></div><div class="vdot"></div></div>
-    Listening... speak now
-  </div>
-
-  <!-- MULTI-IMAGE PREVIEW BAR -->
-  <div class="img-bar" id="img-bar">
-    <div class="img-bar-header">
-      <span class="img-bar-title" id="img-bar-title">📎 0 documents attached</span>
-      <div class="img-bar-actions">
-        <span style="font-size:11px;color:#92400e;opacity:.7">Max 6</span>
-        <button class="img-rm-all" onclick="clearAllImgs()">Remove All ×</button>
-      </div>
-    </div>
-    <div class="img-previews" id="img-previews"></div>
-  </div>
-
   <!-- INPUT -->
   <div class="input-area">
     <div class="input-wrap">
+      <!-- VOICE INDICATOR — inside input area -->
+      <div class="voice-indicator" id="voice-ind">
+        <div class="voice-dots"><div class="vdot"></div><div class="vdot"></div><div class="vdot"></div></div>
+        Listening... speak now
+      </div>
+
+      <!-- MULTI-IMAGE PREVIEW BAR — inside input area -->
+      <div class="img-bar" id="img-bar">
+        <div class="img-bar-header">
+          <span class="img-bar-title" id="img-bar-title">📎 0 documents attached</span>
+          <div class="img-bar-actions">
+            <span style="font-size:11px;color:#92400e;opacity:.7">Max 6</span>
+            <button class="img-rm-all" onclick="clearAllImgs()">Remove All ×</button>
+          </div>
+        </div>
+        <div class="img-previews" id="img-previews"></div>
+      </div>
       <div class="input-box">
         <!-- Left: Upload buttons -->
         <div class="input-left">
@@ -891,7 +887,7 @@ html,body{
           </button>
         </div>
       </div>
-      <div class="input-hint">LegalCraft AI · 185+ Formats · BNS/BNSS/BSA 2023 · 6 Documents at once · Voice Search · Any Language</div>
+      <div class="input-hint">LegalCraft AI · 185+ Formats · BNS/BNSS/BSA 2023 · Gemini Vision · 6 Documents · Voice Search</div>
     </div>
   </div>
 </main>
@@ -1257,11 +1253,14 @@ async function sendMsg(){
   if(busy)return;
   const ta=document.getElementById('chat-ta');
   const text=ta.value.trim();
-  if(!text&&!pendImages.length)return;
+  // Allow send if text OR images present
+  if(!text.trim() && !pendImages.length) return;
 
-  const qText=text||(pendImages.length>1?`Analyze these ${pendImages.length} documents`:'Analyze this document.');
+  const qText = text.trim() || (pendImages.length > 1 
+    ? `Ye ${pendImages.length} documents analyze karo — kya likha hai, legal situation kya hai, kya karna chahiye?`
+    : 'Is document ko analyze karo — kya likha hai, kya legal situation hai, aur kya karna chahiye?');
   // Snapshot images before clearing
-  const imgSnapshot=[...pendImages];
+  const imgSnapshot = [...pendImages];
   const iName=imgSnapshot.length>1?`${imgSnapshot.length} documents attached`:imgSnapshot.length===1?imgSnapshot[0].name:null;
   ta.value=''; ta.style.height='auto';
   clearAllImgs();
@@ -1321,14 +1320,16 @@ async function sendMsg(){
     saveHistory(qText);
   }catch(err){
     const el=document.getElementById(bid);
-    const isNetErr = err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Network') || err.name==='AbortError';
+    const isNetErr = err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Network') || err.name==='AbortError' || err.name==='TypeError';
     const errMsg = isNetErr 
-      ? '⚠️ Connection error. Please check your internet and try again.'
-      : `⚠️ ${err.message || 'Something went wrong. Please try again.'}`;
+      ? '⚠️ Connection error. Internet check karo aur dobara try karo.'
+      : (err.message?.includes('500') 
+          ? '⚠️ Server error. Thodi der baad try karo ya page refresh karo.' 
+          : `⚠️ ${err.message || 'Kuch galat hua. Dobara try karo.'}`);
     if(el) el.innerHTML=`<div style="color:#b45309;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;font-size:13.5px;line-height:1.6">
       <strong>${errMsg}</strong><br>
       <span style="font-size:12px;color:#92400e;margin-top:4px;display:block">
-        Tip: Try refreshing the page if error persists
+        💡 Chrome mein kaam na kare to: Page refresh karo (Ctrl+R) ya incognito mein try karo
       </span>
     </div>`;
   }
