@@ -32,6 +32,7 @@ const NOTICE_V2   = require('./data/formats/notice_formats_v2.js');
 const HMA_1955    = require('./data/acts/hma_complete.js');
 const HAMA_1956   = require('./data/acts/hama_complete.js');
 const IFA_1927    = require('./data/acts/ifa_complete.js');
+const POCSO_2012  = require('./data/acts/pocso_complete.js');
 const HSA_1956    = require('./data/acts/hsa_complete.js');
 const HMGA_1956   = require('./data/acts/hmga_complete.js');
 const MPL_1937    = require('./data/acts/mpl_complete.js');
@@ -50,6 +51,7 @@ const SECTIONS_DB = [
   ...HMA_1955.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
   ...HAMA_1956.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
   ...IFA_1927.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
+  ...POCSO_2012.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
   ...HSA_1956.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
   ...HMGA_1956.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
   ...MPL_1937.map(x=>({s:x.s,t:x.t,act:x.act,kw:x.kw||[],d:x.bare,bare:x.bare,omitted:x.omitted})),
@@ -455,6 +457,8 @@ module.exports = async function handler(req, res){
 
     const GROQ   = process.env.GROQ_API_KEY;
     const TAVILY = process.env.TAVILY_API_KEY;
+    const GEMINI = process.env.GEMINI_API_KEY;   // Google Gemini — for image/document analysis
+    const OPTIIC = process.env.OPTIIC_API_KEY;   // Optiic OCR — for scanned docs / handwritten text
     if(!GROQ) return res.status(500).json({error:'GROQ_API_KEY not configured'});
 
     const lastMsg   = messages[messages.length-1];
@@ -513,52 +517,107 @@ module.exports = async function handler(req, res){
         text: buildVisionPrompt(userQuery, langNote, imagesToProcess.length)
       });
       
-      const vRes = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ}`},
-        body:JSON.stringify({
-          model:'meta-llama/llama-4-scout-17b-16e-instruct',
-          messages:[
-            {role:'system', content:`${DRAFT_BRAIN}
-
-${ANALYSIS_BRAIN}
-
-You are analyzing ${imagesToProcess.length} legal document(s) simultaneously as a senior advocate.
-
-CRITICAL LANGUAGE CAPABILITIES:
-You can read documents in ANY Indian language:
-- Hindi (Devanagari script), Urdu (Nastaliq), Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi (Gurmukhi), Odia
-- Mixed scripts / bilingual documents
-- Handwritten legal documents
-- Stamped/watermarked court documents
-- Old or faded documents
-
-ALWAYS:
-1. Extract and display ALL text first (translate if non-English)
-2. Identify document type and legal nature
-3. Analyze as a professional advocate would
-4. Catch ALL deadlines, limitation periods, notices, amounts
-5. Give actionable legal advice based on the documents`},
-            {role:'user', content: contentParts}
-          ],
-          temperature:0.02,
-          max_tokens:4000,
-        }),
-      });
-      
+      // ── USE GEMINI IF AVAILABLE (best for images), else fallback to Groq ──
       let reply = 'Could not analyze the document(s). Please try again or describe the content as text.';
-      if(vRes.ok){
-        const vd = await vRes.json();
-        reply = vd.choices?.[0]?.message?.content || reply;
-      } else {
-        const err = await vRes.text();
-        console.error('Vision error:', err.slice(0,300));
-        // Try to parse error
+      
+      if(GEMINI){
+        // ── GEMINI VISION (Google — best for Indian language docs) ──
         try{
-          const errObj = JSON.parse(err);
-          reply = `Analysis error: ${errObj.error?.message || 'Please try with fewer/smaller images'}`;
-        }catch(e){}
+          // Build Gemini parts array
+          const geminiParts = [];
+          
+          // Add prompt first
+          geminiParts.push({
+            text: `${DRAFT_BRAIN}\n\nYou are analyzing ${imagesToProcess.length} legal document(s) as a Senior Advocate.\n\nCRITICAL: Read ALL text in ANY language — Hindi, Urdu, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, English, mixed scripts, handwritten, stamped, watermarked documents.\n\n` + buildVisionPrompt(userQuery, langNote, imagesToProcess.length)
+          });
+          
+          // Add images
+          for(const img of imagesToProcess){
+            // Strip data URL prefix if present
+            const imgData = img.data.replace(/^data:[^;]+;base64,/, '');
+            const mimeType = img.type === 'application/pdf' ? 'application/pdf' : img.type;
+            geminiParts.push({
+              inlineData: { data: imgData, mimeType }
+            });
+          }
+          
+          const gRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI}`,
+            {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                contents:[{ role:'user', parts: geminiParts }],
+                generationConfig:{
+                  temperature: 0.1,
+                  maxOutputTokens: 4096,
+                  topP: 0.95,
+                }
+              })
+            }
+          );
+          
+          if(gRes.ok){
+            const gd = await gRes.json();
+            const text = gd.candidates?.[0]?.content?.parts?.[0]?.text;
+            if(text) reply = text;
+            else if(gd.candidates?.[0]?.finishReason === 'SAFETY'){
+              reply = '⚠️ Document analysis blocked by safety filters. Please ensure document contains legal content only.';
+            }
+          } else {
+            const gerr = await gRes.text();
+            console.error('Gemini error:', gerr.slice(0,200));
+            // Fall through to Groq
+            throw new Error('Gemini failed: ' + gerr.slice(0,100));
+          }
+        } catch(geminiErr){
+          console.log('Gemini failed, trying Groq vision...', geminiErr.message);
+          // Fallback to Groq
+          const vRes = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ}`},
+            body:JSON.stringify({
+              model:'meta-llama/llama-4-scout-17b-16e-instruct',
+              messages:[
+                {role:'system', content:`You are a senior advocate analyzing legal documents. Read ALL text in any language.`},
+                {role:'user', content: contentParts}
+              ],
+              temperature:0.05, max_tokens:3500,
+            }),
+          });
+          if(vRes.ok){ const vd=await vRes.json(); reply = vd.choices?.[0]?.message?.content || reply; }
+          else { const ve=await vRes.text(); console.error('Groq vision error:',ve.slice(0,100)); }
+        }
+      } else {
+        // ── NO GEMINI — USE GROQ VISION ──
+        const vRes = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${GROQ}`},
+          body:JSON.stringify({
+            model:'meta-llama/llama-4-scout-17b-16e-instruct',
+            messages:[
+              {role:'system', content:`${DRAFT_BRAIN}\n\n${ANALYSIS_BRAIN}\n\nYou are analyzing ${imagesToProcess.length} legal document(s). Read ALL text in any Indian language or script.`},
+              {role:'user', content: contentParts}
+            ],
+            temperature:0.02, max_tokens:3500,
+          }),
+        });
+        if(vRes.ok){
+          const vd=await vRes.json();
+          reply = vd.choices?.[0]?.message?.content || reply;
+        } else {
+          const ve = await vRes.text();
+          console.error('Groq vision error:', ve.slice(0,200));
+          try{ const eo=JSON.parse(ve); reply=`Analysis error: ${eo.error?.message||'Please try again'}`; }catch(e){}
+        }
       }
+      
+      // ── OPTIIC OCR — for scanned/handwritten docs (if image analysis gave poor results) ──
+      // Optiic is used as a pre-processor when Gemini/Groq can't read the text clearly
+      // It extracts raw text from images, then we pass to analysis
+      // (No extra call needed here — Gemini handles it natively)
+      // Optiic API key is available as: process.env.OPTIIC_API_KEY
+      // Usage: POST https://api.optiic.dev/process with { image: base64, apiKey: OPTIIC }
       
       const docCount = imagesToProcess.length;
       return res.status(200).json({
