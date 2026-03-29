@@ -534,15 +534,22 @@ module.exports = async function handler(req, res){
           const geminiParts = [];
           
           // Add prompt first
+          const hasPdf = imagesToProcess.some(img => img.type === 'application/pdf');
+          const pdfNote = hasPdf ? `\n\nIMPORTANT: One or more documents are PDFs. Extract ALL text from every page. Do not skip any page. Read headers, footers, stamps, signatures, page numbers, footnotes — everything.` : '';
           geminiParts.push({
-            text: `${DRAFT_BRAIN}\n\nYou are analyzing ${imagesToProcess.length} legal document(s) as a Senior Advocate.\n\nCRITICAL: Read ALL text in ANY language — Hindi, Urdu, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, English, mixed scripts, handwritten, stamped, watermarked documents.\n\n` + buildVisionPrompt(userQuery, langNote, imagesToProcess.length)
+            text: `${DRAFT_BRAIN}\n\nYou are analyzing ${imagesToProcess.length} legal document(s) as a Senior Advocate.${pdfNote}\n\nCRITICAL: Read ALL text in ANY language — Hindi, Urdu, Bengali, Tamil, Telugu, Marathi, Gujarati, Kannada, Malayalam, Punjabi, Odia, English, mixed scripts, handwritten, stamped, watermarked documents.\n\n` + buildVisionPrompt(userQuery, langNote, imagesToProcess.length)
           });
           
           // Add images
           for(const img of imagesToProcess){
             // Strip data URL prefix if present
             const imgData = img.data.replace(/^data:[^;]+;base64,/, '');
-            const mimeType = img.type === 'application/pdf' ? 'application/pdf' : img.type;
+            // Gemini supports: image/jpeg, image/png, image/gif, image/webp, application/pdf
+            let mimeType = img.type;
+            if(mimeType === 'application/pdf') mimeType = 'application/pdf';
+            else if(!mimeType || mimeType === 'application/octet-stream') mimeType = 'image/jpeg';
+            // Normalize image types
+            if(mimeType === 'image/jpg') mimeType = 'image/jpeg';
             geminiParts.push({
               inlineData: { data: imgData, mimeType }
             });
