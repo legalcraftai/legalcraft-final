@@ -588,6 +588,56 @@ html,body{
 
 .input-hint{text-align:center;font-size:11.5px;color:#92400e;margin-top:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:6px 12px;line-height:1.5;}
 
+/* ── UPLOAD MODAL ── */
+.upload-modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
+  z-index:300;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(2px);
+}
+.upload-modal-overlay.show{display:flex;}
+.upload-modal{
+  background:white;border-radius:20px 20px 0 0;
+  padding:20px 20px 32px;width:100%;max-width:480px;
+  box-shadow:0 -4px 30px rgba(0,0,0,0.15);
+  animation:slideUp .25s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.upload-modal-title{
+  font-size:14px;font-weight:600;color:var(--navy);
+  text-align:center;margin-bottom:16px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.upload-options{display:flex;gap:12px;margin-bottom:16px;}
+.upload-opt{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:16px 12px;border:1.5px solid var(--border);border-radius:14px;
+  cursor:pointer;background:var(--bg);transition:all .15s;
+  text-align:center;
+}
+.upload-opt:hover,.upload-opt:active{
+  border-color:var(--navy);background:rgba(15,23,42,.04);
+  transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,0.1);
+}
+.upload-opt-icon{font-size:32px;line-height:1;}
+.upload-opt-title{font-size:13px;font-weight:600;color:var(--navy);}
+.upload-opt-sub{font-size:11px;color:var(--muted);line-height:1.4;}
+.upload-modal-cancel{
+  width:100%;padding:11px;border:1px solid var(--border);
+  border-radius:10px;background:transparent;font-size:13px;
+  color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;
+}
+.upload-modal-cancel:hover{background:var(--bg);}
+
+/* ── CHAT HISTORY PERSISTENCE indicator ── */
+.hi-delete{
+  margin-left:auto;padding:2px 6px;border-radius:4px;
+  background:transparent;border:none;color:var(--muted);
+  cursor:pointer;font-size:14px;opacity:0;transition:opacity .15s;
+  flex-shrink:0;
+}
+.hi:hover .hi-delete{opacity:1;}
+.hi-delete:hover{color:#ef4444 !important;}
+
 /* ════════════════════════════════════════════
    RESPONSIVE — BREAKPOINTS (FIXED)
    ════════════════════════════════════════════ */
@@ -895,8 +945,30 @@ html,body{
 </main>
 </div>
 
-<!-- HIDDEN FILE INPUTS — Multi-image support -->
+<!-- UPLOAD CHOICE MODAL -->
+<div class="upload-modal-overlay" id="upload-modal" onclick="closeUploadModal(event)">
+  <div class="upload-modal">
+    <div class="upload-modal-title">📎 Document Upload karein</div>
+    <div class="upload-options">
+      <div class="upload-opt" onclick="chooseGallery()">
+        <div class="upload-opt-icon">🖼️</div>
+        <div class="upload-opt-title">Gallery / Camera</div>
+        <div class="upload-opt-sub">Photo khicho ya gallery se select karein<br>JPG, PNG, HEIC — up to 6</div>
+      </div>
+      <div class="upload-opt" onclick="choosePDF()">
+        <div class="upload-opt-icon">📄</div>
+        <div class="upload-opt-title">PDF Document</div>
+        <div class="upload-opt-sub">PDF file upload karein<br>Court orders, FIR, Contract etc.</div>
+      </div>
+    </div>
+    <button class="upload-modal-cancel" onclick="closeUploadModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- HIDDEN FILE INPUTS -->
 <input type="file" id="cam-in" accept="image/*" capture="environment" style="display:none" onchange="handleFiles(event)"/>
+<input type="file" id="gallery-in" accept="image/*" multiple style="display:none" onchange="handleFiles(event)"/>
+<input type="file" id="pdf-in" accept=".pdf,application/pdf" multiple style="display:none" onchange="handleFiles(event)"/>
 <input type="file" id="up-in" accept="image/*,.pdf,application/pdf" multiple style="display:none" onchange="handleFiles(event)"/>
 
 <script>
@@ -1017,39 +1089,155 @@ function showWelcome(){
   ci.appendChild(d);
 }
 
-// ── HISTORY ──────────────────────────────────────────────────
-function saveHistory(q){
-  const id=Date.now().toString();
-  chatHistory.unshift({id,title:q.slice(0,52)+(q.length>52?'...':''),time:new Date(),msgs:[...messages]});
-  if(chatHistory.length>30) chatHistory=chatHistory.slice(0,30);
-  currentId=id; renderSidebar();
+// ── HISTORY — localStorage persistent ─────────────────────────
+const LS_KEY = 'legalcraft_history_v2';
+
+function loadHistoryFromStorage(){
+  try{
+    const saved = localStorage.getItem(LS_KEY);
+    if(saved){
+      chatHistory = JSON.parse(saved);
+      // Restore dates as Date objects
+      chatHistory.forEach(c=>{ c.time = new Date(c.time); });
+    }
+  }catch(e){ chatHistory = []; }
 }
+
+function saveHistoryToStorage(){
+  try{
+    // Store msgs without image data (too large) — store only text
+    const toSave = chatHistory.slice(0,50).map(c=>({
+      ...c,
+      msgs: c.msgs.map(m=>({role:m.role, content: typeof m.content==='string' ? m.content.slice(0,2000) : ''}))
+    }));
+    localStorage.setItem(LS_KEY, JSON.stringify(toSave));
+  }catch(e){
+    // If storage full, remove oldest half
+    try{
+      chatHistory = chatHistory.slice(0, Math.floor(chatHistory.length/2));
+      localStorage.setItem(LS_KEY, JSON.stringify(chatHistory));
+    }catch(e2){}
+  }
+}
+
+function saveHistory(q){
+  // If current chat already exists, update it
+  if(currentId){
+    const idx = chatHistory.findIndex(c=>c.id===currentId);
+    if(idx !== -1){
+      chatHistory[idx].msgs = [...messages];
+      chatHistory[idx].time = new Date();
+      // Move to top
+      const updated = chatHistory.splice(idx,1)[0];
+      chatHistory.unshift(updated);
+      saveHistoryToStorage();
+      renderSidebar();
+      return;
+    }
+  }
+  // New chat
+  const id = Date.now().toString();
+  currentId = id;
+  chatHistory.unshift({
+    id,
+    title: q.slice(0,55)+(q.length>55?'…':''),
+    time: new Date(),
+    msgs: [...messages]
+  });
+  if(chatHistory.length>50) chatHistory = chatHistory.slice(0,50);
+  saveHistoryToStorage();
+  renderSidebar();
+}
+
+function deleteChat(id, e){
+  e.stopPropagation();
+  chatHistory = chatHistory.filter(c=>c.id!==id);
+  if(currentId===id){ currentId=null; messages=[]; }
+  saveHistoryToStorage();
+  renderSidebar();
+}
+
 function renderSidebar(){
-  const el=document.getElementById('sb-scroll');
-  const nh=document.getElementById('no-hist');
-  if(chatHistory.length===0){if(nh)nh.style.display='block'; return;}
+  const el = document.getElementById('sb-scroll');
+  const nh = document.getElementById('no-hist');
+  if(chatHistory.length===0){ if(nh)nh.style.display='block'; return; }
   if(nh) nh.style.display='none';
-  el.innerHTML=chatHistory.map(c=>{
-    const ago=timeAgo(c.time);
-    return `<div class="hi ${c.id===currentId?'active':''}" onclick="loadChat('${c.id}')">
+  
+  // Group by date
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate()-1);
+  const week = new Date(today); week.setDate(week.getDate()-7);
+  
+  let html = '';
+  let lastGroup = '';
+  
+  chatHistory.forEach(c=>{
+    const d = new Date(c.time); d.setHours(0,0,0,0);
+    let group = '';
+    if(d>=today) group='Today';
+    else if(d>=yesterday) group='Yesterday';
+    else if(d>=week) group='This Week';
+    else group='Older';
+    
+    if(group !== lastGroup){
+      html += `<div class="hi-group">${group}</div>`;
+      lastGroup = group;
+    }
+    
+    html += `<div class="hi ${c.id===currentId?'active':''}" onclick="loadChat('${c.id}')">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <span class="hi-txt">${esc(c.title)}</span>
-      <span class="hi-time">${ago}</span>
+      <span class="hi-time">${timeAgo(c.time)}</span>
+      <button class="hi-delete" onclick="deleteChat('${c.id}',event)" title="Delete">×</button>
     </div>`;
-  }).join('');
+  });
+  
+  el.innerHTML = html;
 }
+
 function timeAgo(date){
   const diff=(Date.now()-new Date(date).getTime())/1000;
   if(diff<60)return'now';
-  if(diff<3600)return Math.floor(diff/60)+'m';
-  if(diff<86400)return Math.floor(diff/3600)+'h';
-  return Math.floor(diff/86400)+'d';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  if(diff<604800)return Math.floor(diff/86400)+'d ago';
+  return new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
 }
+
 function loadChat(id){
-  const chat=chatHistory.find(c=>c.id===id); if(!chat)return;
-  currentId=id; messages=[...chat.msgs]; renderSidebar();
+  const chat = chatHistory.find(c=>c.id===id);
+  if(!chat) return;
+  currentId = id;
+  messages = [...chat.msgs];
+  
+  // Re-render messages on screen
+  const ci = document.getElementById('chat-inner');
+  ci.innerHTML = '';
+  const welcome = document.getElementById('welcome');
+  if(welcome) welcome.remove();
+  
+  messages.forEach(m=>{
+    if(m.role==='user'){
+      const d=document.createElement('div'); d.className='msg-group user-msg';
+      d.innerHTML=`<div class="av av-user">You</div><div><div class="bubble bubble-user">${esc(m.content).replace(/\n/g,'<br>')}</div></div>`;
+      ci.appendChild(d);
+    } else if(m.role==='assistant'){
+      const d=document.createElement('div'); d.className='msg-group';
+      const bid='b'+Date.now()+Math.random().toString(36).slice(2,5);
+      d.innerHTML=`<div class="av av-ai"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2v20M4 7h16" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/><path d="M7 7L4 14a4 4 0 008 0L7 7z" stroke="white" stroke-width="1.2" fill="rgba(255,255,255,0.15)"/><path d="M17 7l-3 7a4 4 0 008 0l-3-7z" stroke="white" stroke-width="1.2" fill="rgba(255,255,255,0.15)"/></svg></div><div id="${bid}" class="bubble bubble-ai"></div>`;
+      ci.appendChild(d);
+      const el=document.getElementById(bid);
+      if(el){ const {html:h}=fmtReply(m.content,[],null); el.innerHTML=h; }
+    }
+  });
+  
+  renderSidebar();
+  scrollBot();
   if(window.innerWidth<=1024) closeSidebar();
 }
+
+// Load history on page start
+loadHistoryFromStorage();
 
 // ── FILE HANDLING ─────────────────────────────────────────────
 function triggerCamera(){ document.getElementById('cam-in').click(); }
@@ -1339,6 +1527,9 @@ async function sendMsg(){
 }
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
+// Init: render sidebar with loaded history
+renderSidebar();
 </script>
 </body>
 </html>
