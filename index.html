@@ -755,6 +755,133 @@ html,body{
   .welcome{max-width:760px;}
   .suggestions{max-width:680px;}
 }
+
+/* ═══════════════════════════════════════
+   ECOURTS PANEL
+   ═══════════════════════════════════════ */
+.ec-panel{
+  position:fixed;top:0;right:0;bottom:0;
+  width:360px;background:white;
+  border-left:1px solid var(--border);
+  box-shadow:-4px 0 24px rgba(0,0,0,0.1);
+  z-index:250;display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .3s ease;
+}
+.ec-panel.open{transform:translateX(0);}
+.ec-header{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+  background:var(--navy);flex-shrink:0;
+}
+.ec-header-title{
+  flex:1;color:white;font-size:14px;font-weight:600;
+  font-family:'Crimson Pro',serif;
+}
+.ec-header-sub{font-size:10px;color:rgba(255,255,255,0.6);}
+.ec-close{
+  background:rgba(255,255,255,0.15);border:none;color:white;
+  width:28px;height:28px;border-radius:6px;cursor:pointer;
+  font-size:16px;display:flex;align-items:center;justify-content:center;
+}
+.ec-close:hover{background:rgba(255,255,255,0.25);}
+.ec-body{flex:1;overflow-y:auto;padding:14px;}
+.ec-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;}
+.ec-tab{
+  padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;
+  border:1px solid var(--border);background:var(--bg);color:var(--muted);
+  cursor:pointer;transition:all .15s;
+}
+.ec-tab.active{background:var(--navy);color:white;border-color:var(--navy);}
+.ec-tab:hover:not(.active){border-color:var(--navy);color:var(--navy);}
+.ec-form{display:flex;flex-direction:column;gap:10px;}
+.ec-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
+.ec-input{
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:'Inter',sans-serif;color:var(--text);
+  background:white;transition:border-color .15s;
+  box-sizing:border-box;
+}
+.ec-input:focus{outline:none;border-color:var(--navy);}
+.ec-input::placeholder{color:#94a3b8;}
+.ec-select{
+  width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:'Inter',sans-serif;color:var(--text);
+  background:white;transition:border-color .15s;
+  box-sizing:border-box;cursor:pointer;
+}
+.ec-select:focus{outline:none;border-color:var(--navy);}
+.ec-btn{
+  width:100%;padding:10px;background:var(--navy);color:white;
+  border:none;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;
+}
+.ec-btn:hover{background:var(--navy-2);}
+.ec-btn:disabled{opacity:.5;cursor:not-allowed;}
+.ec-btn-outline{
+  width:100%;padding:8px;background:transparent;color:var(--navy);
+  border:1.5px solid var(--navy);border-radius:8px;font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;
+}
+.ec-btn-outline:hover{background:rgba(15,23,42,.05);}
+.ec-result{margin-top:14px;}
+.ec-result-card{
+  background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:12px;margin-bottom:10px;
+}
+.ec-result-title{font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px;}
+.ec-field{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px;}
+.ec-field-label{font-size:11px;color:var(--muted);flex-shrink:0;width:100px;}
+.ec-field-value{font-size:12px;color:var(--text);font-weight:500;text-align:right;word-break:break-word;}
+.ec-badge{
+  display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:600;
+}
+.ec-badge-green{background:#d1fae5;color:#065f46;}
+.ec-badge-red{background:#fee2e2;color:#991b1b;}
+.ec-badge-yellow{background:#fef3c7;color:#92400e;}
+.ec-badge-blue{background:#dbeafe;color:#1e40af;}
+.ec-hearing-item{
+  padding:8px 10px;border-left:3px solid var(--navy);
+  background:var(--bg);border-radius:0 6px 6px 0;margin-bottom:6px;
+}
+.ec-hearing-date{font-size:12px;font-weight:600;color:var(--navy);}
+.ec-hearing-purpose{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.ec-order-item{
+  padding:8px 10px;background:var(--bg);border:1px solid var(--border);
+  border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;
+}
+.ec-order-date{font-size:12px;font-weight:500;color:var(--navy);}
+.ec-order-link{font-size:11px;color:var(--navy);text-decoration:none;font-weight:600;}
+.ec-order-link:hover{text-decoration:underline;}
+.ec-loading{text-align:center;padding:20px;color:var(--muted);font-size:13px;}
+.ec-error{
+  background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;
+  padding:10px 12px;font-size:12px;color:#be123c;margin-top:10px;
+}
+.ec-divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
+.ec-cnr-help{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5;}
+.ec-ai-analyze{
+  background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;
+  padding:10px 12px;margin-top:10px;
+}
+.ec-ai-analyze p{font-size:12px;color:#0369a1;margin-bottom:6px;}
+
+/* eCourts toggle button in topbar */
+.ec-toggle-btn{
+  padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;
+  border:1.5px solid var(--navy);background:transparent;color:var(--navy);
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+  transition:all .15s;flex-shrink:0;
+}
+.ec-toggle-btn:hover{background:var(--navy);color:white;}
+.ec-toggle-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;}
+.ec-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:249;
+}
+.ec-overlay.show{display:block;}
+
+@media(max-width:768px){
+  .ec-panel{width:100%;border-left:none;}
+}
 </style>
 </head>
 <body>
@@ -835,6 +962,10 @@ html,body{
       </div>
     </div>
     <div class="tb-right">
+      <button class="ec-toggle-btn" onclick="toggleECourts()" title="Search court cases">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Court Search
+      </button>
       <button class="clear-btn" onclick="newChat()">Clear chat</button>
     </div>
   </header>
@@ -944,6 +1075,120 @@ html,body{
   </div>
 </main>
 </div>
+
+<!-- ECOURTS PANEL OVERLAY -->
+<div class="ec-overlay" id="ec-overlay" onclick="closeECourts()"></div>
+
+<!-- ECOURTS PANEL -->
+<div class="ec-panel" id="ec-panel">
+  <div class="ec-header">
+    <div>
+      <div class="ec-header-title">⚖️ eCourts India — Case Search</div>
+      <div class="ec-header-sub">Real-time court data from webapi.ecourtsindia.com</div>
+    </div>
+    <button class="ec-close" onclick="closeECourts()">×</button>
+  </div>
+  
+  <div class="ec-body">
+    <!-- Tabs -->
+    <div class="ec-tabs">
+      <div class="ec-tab active" onclick="switchECTab(this,'cnr')" data-tab="cnr">🔍 CNR Search</div>
+      <div class="ec-tab" onclick="switchECTab(this,'case')" data-tab="case">📋 Case No.</div>
+      <div class="ec-tab" onclick="switchECTab(this,'hearings')" data-tab="hearings">📅 Hearings</div>
+      <div class="ec-tab" onclick="switchECTab(this,'orders')" data-tab="orders">📄 Orders</div>
+    </div>
+
+    <!-- CNR Search Tab -->
+    <div id="ec-tab-cnr" class="ec-tab-content">
+      <div class="ec-form">
+        <div>
+          <div class="ec-label">CNR Number</div>
+          <input class="ec-input" id="ec-cnr-input" placeholder="e.g. DLHC010001232024" 
+            onkeydown="if(event.key==='Enter') searchByCNR()"
+            oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')"/>
+          <div class="ec-cnr-help">
+            CNR = State Code + Court Code + Case No + Year<br>
+            Example: <strong>DLHC010001232024</strong> (Delhi HC)
+          </div>
+        </div>
+        <button class="ec-btn" onclick="searchByCNR()">🔍 Search Case</button>
+      </div>
+      <div id="ec-cnr-result" class="ec-result"></div>
+    </div>
+
+    <!-- Case No. Search Tab -->
+    <div id="ec-tab-case" class="ec-tab-content" style="display:none">
+      <div class="ec-form">
+        <div>
+          <div class="ec-label">Case Type</div>
+          <select class="ec-select" id="ec-case-type">
+            <option value="CRL.A">Criminal Appeal (CRL.A)</option>
+            <option value="CRL.M.C">Criminal Misc. Case (CRL.M.C)</option>
+            <option value="W.P.(C)">Writ Petition Civil (W.P.(C))</option>
+            <option value="W.P.(CRL)">Writ Petition Criminal</option>
+            <option value="CS(COMM)">Commercial Suit</option>
+            <option value="CS(OS)">Civil Suit (CS)</option>
+            <option value="FAO">First Appeal Order (FAO)</option>
+            <option value="RFA">Regular First Appeal</option>
+            <option value="CCP">Contempt Petition (Civil)</option>
+            <option value="CONT.CAS(C)">Contempt Case Civil</option>
+            <option value="BAIL APPLN">Bail Application</option>
+            <option value="SESSION CASE">Sessions Case</option>
+            <option value="SC">Sessions Case (SC)</option>
+            <option value="CC">Complaint Case (CC)</option>
+            <option value="MACT">Motor Accident Claim</option>
+            <option value="MC">Matrimonial Case (MC)</option>
+            <option value="HMA">HMA Case</option>
+            <option value="EX">Execution Case (EX)</option>
+            <option value="ARB.P">Arbitration Petition</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div>
+          <div class="ec-label">Case Number</div>
+          <input class="ec-input" id="ec-case-num" placeholder="e.g. 1234"/>
+        </div>
+        <div>
+          <div class="ec-label">Year</div>
+          <input class="ec-input" id="ec-case-year" placeholder="e.g. 2024" type="number" min="2000" max="2025"/>
+        </div>
+        <div>
+          <div class="ec-label">Court / State (Optional)</div>
+          <input class="ec-input" id="ec-court-code" placeholder="e.g. Delhi HC, Lucknow District"/>
+        </div>
+        <button class="ec-btn" onclick="searchByCase()">🔍 Search</button>
+      </div>
+      <div id="ec-case-result" class="ec-result"></div>
+    </div>
+
+    <!-- Hearings Tab -->
+    <div id="ec-tab-hearings" class="ec-tab-content" style="display:none">
+      <div class="ec-form">
+        <div>
+          <div class="ec-label">CNR Number</div>
+          <input class="ec-input" id="ec-hear-cnr" placeholder="e.g. DLHC010001232024"
+            oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')"/>
+        </div>
+        <button class="ec-btn" onclick="fetchHearings()">📅 Get Hearing History</button>
+      </div>
+      <div id="ec-hear-result" class="ec-result"></div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div id="ec-tab-orders" class="ec-tab-content" style="display:none">
+      <div class="ec-form">
+        <div>
+          <div class="ec-label">CNR Number</div>
+          <input class="ec-input" id="ec-ord-cnr" placeholder="e.g. DLHC010001232024"
+            oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')"/>
+        </div>
+        <button class="ec-btn" onclick="fetchOrders()">📄 Get Orders / Judgments</button>
+      </div>
+      <div id="ec-ord-result" class="ec-result"></div>
+    </div>
+
+  </div><!-- /ec-body -->
+</div><!-- /ec-panel -->
 
 <!-- UPLOAD CHOICE MODAL -->
 <div class="upload-modal-overlay" id="upload-modal" onclick="closeUploadModal(event)">
@@ -1530,6 +1775,202 @@ if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catc
 
 // Init: render sidebar with loaded history
 renderSidebar();
+
+// ═══════════════════════════════════════════════════════════════
+// ECOURTS INDIA — CASE SEARCH
+// ═══════════════════════════════════════════════════════════════
+
+function toggleECourts(){
+  const panel = document.getElementById('ec-panel');
+  const overlay = document.getElementById('ec-overlay');
+  const isOpen = panel.classList.contains('open');
+  if(isOpen){ closeECourts(); }
+  else { panel.classList.add('open'); overlay.classList.add('show'); }
+}
+function closeECourts(){
+  document.getElementById('ec-panel').classList.remove('open');
+  document.getElementById('ec-overlay').classList.remove('show');
+}
+function switchECTab(el, tab){
+  document.querySelectorAll('.ec-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.ec-tab-content').forEach(c=>c.style.display='none');
+  document.getElementById('ec-tab-'+tab).style.display='block';
+}
+
+// ── API CALL HELPER ────────────────────────────────────────────
+async function ecourtsFetch(payload){
+  const r = await fetch('/api/courts',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if(!r.ok){
+    const e = await r.json().catch(()=>({error:'Network error'}));
+    throw new Error(e.error || 'API error '+r.status);
+  }
+  return r.json();
+}
+
+// ── RENDER HELPERS ─────────────────────────────────────────────
+function ecLoading(containerId){ document.getElementById(containerId).innerHTML='<div class="ec-loading">🔍 Searching eCourts database...</div>'; }
+function ecError(containerId, msg){ document.getElementById(containerId).innerHTML=`<div class="ec-error">⚠️ ${esc(msg)}</div>`; }
+
+function renderCaseCard(data, containerId){
+  const c = data.data || data; // handle nested
+  const statusBadge = (c.status||'').toLowerCase().includes('pending')
+    ? `<span class="ec-badge ec-badge-yellow">⏳ Pending</span>`
+    : (c.status||'').toLowerCase().includes('disposed')
+    ? `<span class="ec-badge ec-badge-green">✅ Disposed</span>`
+    : `<span class="ec-badge ec-badge-blue">${esc(c.status||'Unknown')}</span>`;
+
+  const fields = [
+    ['Case Title', c.title || c.caseTitle || c.case_title || '—'],
+    ['CNR Number', c.cnr || c.cnrNumber || c.cnr_number || '—'],
+    ['Case Type', c.caseType || c.case_type || '—'],
+    ['Case Number', c.caseNumber || c.case_number || '—'],
+    ['Filing Date', c.filingDate || c.filing_date || '—'],
+    ['Court', c.court || c.courtName || c.court_name || '—'],
+    ['Judge', c.judge || c.judgeName || c.judge_name || '—'],
+    ['Petitioner', c.petitioner || c.petitioners?.[0]?.name || '—'],
+    ['Respondent', c.respondent || c.respondents?.[0]?.name || '—'],
+    ['Next Hearing', c.nextHearing || c.next_hearing || '—'],
+    ['Last Hearing', c.lastHearing || c.last_hearing || '—'],
+    ['Status', ''], // handled by badge
+  ].filter(([k,v])=>v && v!=='—' && k!=='Status');
+
+  let html = `<div class="ec-result-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="ec-result-title">📋 Case Details</div>
+      ${statusBadge}
+    </div>
+    ${fields.map(([k,v])=>`
+      <div class="ec-field">
+        <span class="ec-field-label">${k}</span>
+        <span class="ec-field-value">${esc(String(v))}</span>
+      </div>`).join('')}
+  </div>
+  <div class="ec-ai-analyze">
+    <p>🤖 <strong>AI se is case ka analysis karein?</strong></p>
+    <button class="ec-btn-outline" onclick="analyzeInChat(${JSON.stringify(JSON.stringify(c)).slice(0,2000)})">
+      Chat mein Analyze karein →
+    </button>
+  </div>`;
+  
+  document.getElementById(containerId).innerHTML = html;
+}
+
+function renderHearings(data, containerId){
+  const hearings = data.data?.hearings || data.hearings || data.data || [];
+  if(!hearings.length){ document.getElementById(containerId).innerHTML='<div class="ec-loading">No hearing history found.</div>'; return; }
+  
+  let html = '<div class="ec-result-card"><div class="ec-result-title">📅 Hearing History</div>';
+  hearings.forEach(h=>{
+    html += `<div class="ec-hearing-item">
+      <div class="ec-hearing-date">📅 ${esc(h.date || h.hearingDate || h.hearing_date || '—')}</div>
+      <div class="ec-hearing-purpose">${esc(h.purpose || h.hearingPurpose || h.business_on_date || '—')}</div>
+      ${h.nextDate ? `<div style="font-size:11px;color:#0369a1;margin-top:3px;">Next: ${esc(h.nextDate)}</div>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById(containerId).innerHTML = html;
+}
+
+function renderOrders(data, containerId){
+  const orders = data.data?.orders || data.orders || data.data || [];
+  if(!orders.length){ document.getElementById(containerId).innerHTML='<div class="ec-loading">No orders found.</div>'; return; }
+  
+  let html = '<div class="ec-result-card"><div class="ec-result-title">📄 Orders / Judgments</div>';
+  orders.forEach(o=>{
+    html += `<div class="ec-order-item">
+      <div>
+        <div class="ec-order-date">📄 ${esc(o.date || o.orderDate || o.order_date || '—')}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(o.type || o.orderType || 'Order')}</div>
+      </div>
+      ${o.url || o.pdfUrl || o.pdf_url
+        ? `<a class="ec-order-link" href="${esc(o.url||o.pdfUrl||o.pdf_url)}" target="_blank">Download PDF →</a>`
+        : '<span style="font-size:11px;color:var(--muted)">No PDF</span>'}
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById(containerId).innerHTML = html;
+}
+
+// ── SEARCH FUNCTIONS ────────────────────────────────────────────
+async function searchByCNR(){
+  const cnr = document.getElementById('ec-cnr-input').value.trim();
+  if(!cnr){ alert('CNR number daalo (e.g. DLHC010001232024)'); return; }
+  ecLoading('ec-cnr-result');
+  try{
+    const data = await ecourtsFetch({action:'case_by_cnr', cnr});
+    renderCaseCard(data, 'ec-cnr-result');
+  }catch(e){ ecError('ec-cnr-result', e.message); }
+}
+
+async function searchByCase(){
+  const caseType = document.getElementById('ec-case-type').value;
+  const caseNumber = document.getElementById('ec-case-num').value.trim();
+  const year = document.getElementById('ec-case-year').value.trim();
+  const courtCode = document.getElementById('ec-court-code').value.trim();
+  if(!caseNumber||!year){ alert('Case number aur year daalo'); return; }
+  ecLoading('ec-case-result');
+  try{
+    const data = await ecourtsFetch({action:'search_case', caseType, caseNumber, year, courtCode});
+    renderCaseCard(data, 'ec-case-result');
+  }catch(e){ ecError('ec-case-result', e.message); }
+}
+
+async function fetchHearings(){
+  const cnr = document.getElementById('ec-hear-cnr').value.trim();
+  if(!cnr){ alert('CNR number daalo'); return; }
+  ecLoading('ec-hear-result');
+  try{
+    const data = await ecourtsFetch({action:'hearings', cnr});
+    renderHearings(data, 'ec-hear-result');
+  }catch(e){ ecError('ec-hear-result', e.message); }
+}
+
+async function fetchOrders(){
+  const cnr = document.getElementById('ec-ord-cnr').value.trim();
+  if(!cnr){ alert('CNR number daalo'); return; }
+  ecLoading('ec-ord-result');
+  try{
+    const data = await ecourtsFetch({action:'orders', cnr});
+    renderOrders(data, 'ec-ord-result');
+  }catch(e){ ecError('ec-ord-result', e.message); }
+}
+
+// ── ANALYZE CASE IN CHAT ────────────────────────────────────────
+function analyzeInChat(jsonStr){
+  closeECourts();
+  let caseData;
+  try{ caseData = JSON.parse(jsonStr); }catch(e){ return; }
+  const title = caseData.title || caseData.caseTitle || 'Unknown Case';
+  const cnr = caseData.cnr || caseData.cnrNumber || '';
+  const status = caseData.status || '';
+  const nextHearing = caseData.nextHearing || caseData.next_hearing || '';
+  
+  const prompt = `eCourts India se mujhe yeh case mila hai — iska legal analysis karo:
+
+**Case:** ${title}
+**CNR:** ${cnr}
+**Status:** ${status}
+**Next Hearing:** ${nextHearing}
+**Full Data:** ${JSON.stringify(caseData, null, 2).slice(0, 1500)}
+
+Mujhe batao:
+1. Is case ki current legal position kya hai?
+2. Pending actions kya hain?
+3. Next hearing ke liye kya prepare karna chahiye?
+4. Advocate ke liye kya strategy hogi?`;
+
+  const ta = document.getElementById('chat-ta');
+  ta.value = prompt;
+  resize(ta);
+  ta.focus();
+  // Auto scroll to bottom
+  document.getElementById('chat-wrap').scrollTop = document.getElementById('chat-wrap').scrollHeight;
+}
 </script>
 </body>
 </html>
